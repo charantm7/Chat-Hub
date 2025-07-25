@@ -1,7 +1,17 @@
-from sqlalchemy import TIMESTAMP, Boolean, Column, String, Integer
+import enum
+from uuid import uuid4
+from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, String, Integer, UUID, Text, Enum
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
 from app.core.psql_connection import Base
+
+
+class RequestStatus(str, enum.Enum):
+    pending = "pending"
+    accepted = "accepted"
+    rejected = "rejected"
+
 
 
 class Users(Base):
@@ -13,3 +23,47 @@ class Users(Base):
     picture = Column(String, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     is_verified = Column(Boolean, nullable=False, default=False)
+
+class Chats(Base):
+    __tablename__ = 'chats'
+
+    id = Column(UUID, primary_key=True, default=uuid4, unique=True)
+    name = Column(String, nullable=True)
+    is_group = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+
+
+class ChatMembers(Base):
+    __tablename__ = 'chatmembers'
+
+    id = Column(UUID, primary_key=True, default=uuid4, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    chat_id = Column(UUID, ForeignKey('chats.id'))
+    joined_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+
+
+class Message(Base):
+    __tablename__ = 'messages'
+
+    id = Column(UUID, primary_key=True, default=uuid4, unique=True)
+    chat_id = Column(UUID, ForeignKey("chats.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(Text)
+    sent_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+
+
+class FriendRequest(Base):
+    __tablename__ = "friendrequest"
+
+    id = Column(UUID, primary_key=True, default=uuid4, unique=True)
+
+    from_user_id = Column(Integer, ForeignKey("users.id"))
+    to_user_id = Column(Integer, ForeignKey("users.id"))
+
+    status = Column(Enum(RequestStatus), default=RequestStatus.pending)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+
+    from_user = relationship("Users", foreign_keys=[from_user_id])
+    to_user = relationship("Users", foreign_keys=[to_user_id])
+
+    
