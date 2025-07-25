@@ -54,7 +54,7 @@ async def google_callback(request: Request,db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Google account not found")
 
 
-    user = user_service.get_user(db=db, email=email)
+    user = await user_service.get_user(db=db, email=email)
 
     if not user:
 

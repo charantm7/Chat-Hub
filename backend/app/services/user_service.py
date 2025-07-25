@@ -17,7 +17,7 @@ async def get_user(db: Session, email: Optional[str] = None) -> Optional[Users]:
 
     return db.query(Users).filter(Users.email == email).first()
 
-async def get_current_user(token:str = Depends(oauth_scheme), db: Session = Depends(get_db)):
+async def get_current_user(token:str = Depends(oauth_scheme), db: Session = Depends(get_db)) -> Users | None:
 
     credential_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, 
@@ -30,7 +30,7 @@ async def get_current_user(token:str = Depends(oauth_scheme), db: Session = Depe
 
     data = await security.validate_access_token(token=token, credential_exception=credential_exception)
     
-    user = get_user(db=db, email=data.email)
+    user = await get_user(db=db, email=data.email)
 
     if not user:
         raise credential_exception
