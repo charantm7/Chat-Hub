@@ -44,4 +44,4 @@ async def favicon():
 
 @app.get('/')
 async def health(current_user: int = Depends(get_current_user)):
-    return await current_user
+    return current_user
