@@ -2,12 +2,14 @@ from operator import and_, or_
 from uuid import UUID
 from fastapi import Body, websockets, APIRouter, Depends, HTTPException, status
 
+from sqlalchemy import desc
 from sqlalchemy.orm import Session, aliased
 
 from app.core.psql_connection import get_db
 from app.schemas.user_schema import FriendRequestSchema
 from app.models.user_model import Users, FriendRequest, RequestStatus, Chats, ChatMembers, Message
 from app.services.user_service import get_current_user
+from app.core.websocket import manager
 
 
 chat = APIRouter()
@@ -162,5 +164,22 @@ async def send_message(chat_id: UUID, content: dict = Body(...), db: Session = D
 
 
     return {'message':f'Message {content} sent to {friend[0]['to_user']}'}
+
+
+@chat.get('/{chat_id}/message')
+async def get_messages(chat_id: UUID, db: Session = Depends(get_db), current_user: Users = Depends(get_current_user)):
+
+    chat = db.query(Chats).filter(Chats.id == chat_id).first()
+
+    if not chat:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="chat not found")
+
+    messages = db.query(Message).filter(Message.chat_id == chat.id).order_by(desc(Message.sent_at)).all()
+
+    if not messages:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+
+    return messages
+
 
 

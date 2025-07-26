@@ -45,7 +45,13 @@ async def create_access_token(data: dict) -> str:
 
 
 
-async def validate_access_token(token, credential_exception):
+async def validate_access_token(token):
+
+    credential_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, 
+        detail="Could not validate credentials", 
+        headers={"WWW-Authenticate":"Bearer"}
+    )
 
     if not token:
         raise credential_exception
