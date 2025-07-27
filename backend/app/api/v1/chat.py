@@ -132,6 +132,7 @@ async def get_friends(db: Session = Depends(get_db), current_user: Users = Depen
             "id":friend.id,
             "name":friend.name,
             "email":friend.email,
+            "picture":friend.picture,
             "chat_id":chat.id if chat else None
         })
 
