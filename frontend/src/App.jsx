@@ -1,13 +1,12 @@
 import React from "react";
-import Navbar from "./components/Navbar";
-import Main from "./components/Main";
+import { Routes, Route, Link } from "react-router-dom";
+import Chat from "./components/Chat";
 
 const App = () => {
   return (
-    <div className="bg-[#0d1117f1] flex flex-col p-[.7rem] gap-[.7rem]">
-      <Navbar />
-      <Main />
-    </div>
+    <Routes>
+      <Route path="/chat" element={<Chat />} />
+    </Routes>
   );
 };
 
