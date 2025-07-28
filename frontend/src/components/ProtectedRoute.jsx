@@ -3,7 +3,7 @@ import React from "react";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
-  return token ? children : <Navigate to="/authentication" />;
+  return token ? children : <Navigate to="/" />;
 }
 
 export default ProtectedRoute;

@@ -6,6 +6,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.api import api_router
 from app.core.config import settings
 from app.services.user_service import get_current_user
+from app.models.user_model import Users
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,5 +44,5 @@ async def favicon():
     return Response(status_code=status.HTTP_200_OK)
 
 @app.get('/')
-async def health(current_user: int = Depends(get_current_user)):
+async def health(current_user: Users = Depends(get_current_user)):
     return current_user

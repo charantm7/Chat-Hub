@@ -2,6 +2,7 @@ import httpx
 
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -70,6 +71,14 @@ async def google_callback(request: Request,db: Session = Depends(get_db)):
 
     return RedirectResponse(url=frontend_url)
 
+@router.get("/get-users")
+async def get_users(db: Session = Depends(get_db)):
 
+    users = db.query(Users).order_by(desc(Users.created_at)).limit(50).all()
+    
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not available")
+
+    return users
 
 

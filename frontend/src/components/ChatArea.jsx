@@ -7,12 +7,16 @@ import { faFaceSmile } from "@fortawesome/free-solid-svg-icons";
 import { faPaperclip } from "@fortawesome/free-solid-svg-icons";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 
-function ChatArea() {
+function ChatArea({ user }) {
+  if (!user) {
+    return <div className="flex-1 p-4 text-gray-500">Select a user to start chatting</div>;
+  }
+
   return (
     <div className="w-[75%] bg-[#14171c] flex flex-col">
       <div className="text-[#e8e8e8e0] bg-[#01040963] flex justify-between items-center pr-4 pl-4 pt-2 pb-2 border-b-1 border-[var(--border-2)]">
         <div className="flex flex-col justify-center">
-          <p className="text-[15px]">Uday T M</p>
+          <p className="text-[15px]">{user.name}</p>
           <small className="text-[11px] opacity-70">last seen recently</small>
         </div>
         <div className="flex gap-4 text-sm items-center">

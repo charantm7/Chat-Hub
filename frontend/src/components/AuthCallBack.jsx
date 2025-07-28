@@ -9,7 +9,6 @@ function AuthCallBack() {
     const token = params.get("token");
 
     if (token) {
-      console.info("This is token recived", token);
       localStorage.setItem("token", token);
       setTimeout(() => navigate("/chat", { replace: true }), 0);
     } else {
