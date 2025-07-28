@@ -1,13 +1,68 @@
 import React from "react";
+import { useState } from "react";
+import { useEffect } from "react";
 import ChatBg from "../assets/chat-app-bg.jpg";
 import HandImg from "../assets/hand-chat.png";
+import { useNavigate } from "react-router-dom";
 
 const GOOGLE_LOGIN_URL = "http://127.0.0.1:8000/v1/auth/login/google";
 
 function Authentication() {
+  const [user, setUser] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const token = localStorage.getItem("token");
+  const IsLoggedIn = !!token;
+  const navigate = useNavigate();
+  const Logout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
   const HandleGoogleLogin = () => {
     window.location.href = GOOGLE_LOGIN_URL;
   };
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/", {
+          method: "GET",
+          headers: {
+            "Cotent-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response) {
+          throw new Error("Unauthorized ");
+        }
+        const data = await response.json();
+        setUser(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    getUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-4 space-y-3 animate-pulse">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="w-[40px] h-[40px] rounded-full bg-gray-700"></div>
+            <div className="flex-1">
+              <div className="w-1/3 h-3 bg-gray-700 rounded mb-2"></div>
+              <div className="w-1/2 h-2 bg-gray-600 rounded"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden w-screen h-screen">
       <img src={ChatBg} alt="..." className="w-full h-full " />
@@ -26,20 +81,32 @@ function Authentication() {
             Help
           </button>
         </div>
-        <div className="flex gap-[2rem] items-center">
+        {IsLoggedIn ? (
           <button
+            onClick={Logout}
             type="button"
-            className=" text-black border-1 pt-1 pb-1 pr-3 pl-3 rounded-4xl cursor-pointer text-[17px] bg-[#fff]"
+            className="text-black border border-gray-400 pt-1 pb-1 pr-3 pl-3 rounded-4xl cursor-pointer text-[17px] bg-[#fff]"
           >
-            sign In
+            Logout
           </button>
-          <button
-            type="button"
-            className=" text-black border-1 pt-1 pb-1 pr-3 pl-3 rounded-4xl cursor-pointer text-[17px]  bg-[#fff]"
-          >
-            sign Up
-          </button>
-        </div>
+        ) : (
+          <div className="flex gap-[2rem] items-center">
+            <button
+              onClick={HandleGoogleLogin}
+              type="button"
+              className="text-black border border-gray-400 pt-1 pb-1 pr-3 pl-3 rounded-4xl cursor-pointer text-[17px] bg-[#fff]"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={HandleGoogleLogin}
+              type="button"
+              className="text-black border border-gray-400 pt-1 pb-1 pr-3 pl-3 rounded-4xl cursor-pointer text-[17px] bg-[#fff]"
+            >
+              Sign Up
+            </button>
+          </div>
+        )}
       </nav>
       <div className="absolute left-[37%] text-white top-[32%]  w-[100%] ">
         <div className="flex flex-col gap-2">
@@ -48,20 +115,37 @@ function Authentication() {
           </p>
           <p className="opacity-70 ml-3">Talk to everyone, everywhere – seamlessly.</p>
         </div>
-        <p className="absolute top-[9rem] left-[25rem] bg-[#ffffff13] pt-3 pb-3 pr-5 pl-5 rounded-4xl opacity-80 text-[13px]">
-          Try Demo
-        </p>
-        <button
-          onClick={HandleGoogleLogin}
-          className="absolute top-[14rem] left-[20rem] flex items-center  pr-8 pl-4 bg-[#ffffff0f] rounded-4xl cursor-pointer hover:bg-[#ffffff22]"
-        >
-          <img
-            src="https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png"
-            alt="..."
-            className="w-15 h-15"
-          />
-          Sign In with Google
-        </button>
+        {IsLoggedIn ? (
+          <div>
+            <p className="absolute top-[9rem] left-[23rem] bg-[#ffffff13] pt-3 pb-3 pr-5 pl-5 rounded-4xl opacity-80 text-[13px]">
+              Welcome Back {user.name}
+            </p>
+            <button className="absolute top-[14rem] left-[20rem] flex flex-row items-center gap-3 pr-8 pl-4 pt-2 pb-2 bg-[#ffffff0f] rounded-4xl cursor-pointer hover:bg-[#ffffff22]">
+              <img src={user.picture} alt="..." className="w-10 h-10 rounded-[50%]" />
+              <div className="flex flex-col items-baseline gap-1 ">
+                <p className="text-md">You are Logged as {user.name}</p>
+                <p className="text-[12px]">{user.email}</p>
+              </div>
+            </button>
+          </div>
+        ) : (
+          <div>
+            <p className="absolute top-[9rem] left-[25rem] bg-[#ffffff13] pt-3 pb-3 pr-5 pl-5 rounded-4xl opacity-80 text-[13px]">
+              Try Demo
+            </p>
+            <button
+              onClick={HandleGoogleLogin}
+              className="absolute top-[14rem] left-[20rem] flex items-center  pr-8 pl-4 bg-[#ffffff0f] rounded-4xl cursor-pointer hover:bg-[#ffffff22]"
+            >
+              <img
+                src="https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png"
+                alt="..."
+                className="w-15 h-15"
+              />
+              Sign In with Google
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

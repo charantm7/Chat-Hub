@@ -4,6 +4,7 @@ import Chat from "./components/Chat";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Authentication from "./components/Authentication";
 import AuthCallBack from "./components/AuthCallBack";
+import AddFriends from "./components/AddFriends";
 
 const App = () => {
   return (
@@ -16,8 +17,9 @@ const App = () => {
           </ProtectedRoute>
         }
       />
-      <Route path="/authentication" element={<Authentication />} />
+      <Route path="/" element={<Authentication />} />
       <Route path="/auth/callback" element={<AuthCallBack />} />
+      <Route path="/add" element={<AddFriends />} />
     </Routes>
   );
 };
