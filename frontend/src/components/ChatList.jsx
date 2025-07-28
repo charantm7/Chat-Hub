@@ -9,8 +9,8 @@ const ChatList = () => {
   useEffect(() => {
     const getFriends = async () => {
       try {
-        const token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNoYXJhbm50bS5kZXZAZ21haWwuY29tIiwiZXhwIjoxNzUzNjU2MjQ5fQ.HV27g5bQdc6-cKEYNNNTcx9niHlC9kzQIoEC48ogRnE";
+        const token = localStorage.getItem("token");
+
         const response = await fetch("http://127.0.0.1:8000/v1/chat/friends", {
           method: "GET",
           headers: {

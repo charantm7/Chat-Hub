@@ -1,6 +1,7 @@
 import httpx
 
 from fastapi import APIRouter, Request, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -65,7 +66,10 @@ async def google_callback(request: Request,db: Session = Depends(get_db)):
 
     jwt_token = await security.create_access_token({"email":email})
 
-    return {'access_token':jwt_token, 'token_type':'Bearer'}
+    frontend_url = f"http://localhost:5173/auth/callback?token={jwt_token}"
+
+    return RedirectResponse(url=frontend_url)
+
 
 
 
