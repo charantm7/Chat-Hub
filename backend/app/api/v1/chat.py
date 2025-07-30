@@ -2,6 +2,7 @@ from operator import and_, or_
 from uuid import UUID
 from fastapi import Body, websockets, APIRouter, Depends, HTTPException, status
 
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, aliased
 
@@ -49,12 +50,24 @@ async def send_request(data: FriendRequestSchema, db: Session = Depends(get_db),
 @chat.get('/friend-requests')
 async def incomming_request(db: Session = Depends(get_db), current_user: Users = Depends(get_current_user)):
 
-    requests = db.query(FriendRequest).filter_by(to_user_id=current_user.id, status=RequestStatus.pending).all()
-
+    FR = aliased(FriendRequest)
+    requests = (
+        db.query(Users, FR.id.label('request_id'))
+        .join(FR, FR.from_user_id == Users.id)
+        .filter(FR.to_user_id == current_user.id, FR.status == RequestStatus.pending).all()
+    )
+    
     if not requests:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='No request found')
     
-    return requests
+    response = [
+        {
+            'request_id':request_id,
+            'user': jsonable_encoder(user)
+        }
+        for user, request_id in requests
+    ]
+    return response
 
 
 @chat.post('/friend-requests/{id}/accept')

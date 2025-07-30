@@ -9,7 +9,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
   const [showModal, setShowModal] = useState(null);
   const [filter, setFilter] = useState("all");
   const [users, setUsers] = useState([]);
-  const [request, setRequest] = useState("adduser");
+  const [request, setRequest] = useState({});
 
   useEffect(() => {
     const Getusers = async () => {
@@ -25,7 +25,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
     Getusers();
   }, []);
 
-  const SendFriendRquest = async (mail) => {
+  const SendFriendRquest = async (mail, id) => {
     const token = await GetValidAccessToken();
     if (!token) return;
     try {
@@ -39,9 +39,9 @@ const ChatList = ({ onSelect, selectedUser }) => {
       });
 
       if (!res.ok) throw new Error("friend Request failed");
+      setRequest((prev) => ({ ...prev, [id]: "requested" }));
 
       const data = await res.json();
-
       console.log(data);
     } catch (error) {
       console.log("invte", error);
@@ -78,7 +78,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
           throw new Error("Unauthorized or failed to fetch friends");
         }
         const data = await response.json();
-
+        console.log(data);
         setFriends(data);
       } catch (error) {
         console.error("Error fetching Chats", error);
@@ -157,7 +157,12 @@ const ChatList = ({ onSelect, selectedUser }) => {
                 selectedUser === friend ? "bg-[#ffffff15]" : "bg-0"
               }`}
             >
-              <img src={friend.picture} alt="..." className="rounded-[50%] w-[40px] h-[40px]" />
+              <img
+                src={friend.picture}
+                alt="..."
+                referrerPolicy="no-referrer"
+                className="rounded-[50%] w-[40px] h-[40px]"
+              />
               <div className="flex flex-col w-[100%] ml-1 gap-1">
                 <p>{friend.name}</p>
                 <small className="opacity-70">hi what do you do?</small>
@@ -206,22 +211,33 @@ const ChatList = ({ onSelect, selectedUser }) => {
               />
             </div>
             <div className="flex flex-col w-[100%]">
-              {users.map((friend) => (
-                <div className="  flex w-[100%] items-center  pt-2 pb-2 gap-2">
-                  <img src={friend.picture} alt="..." className="rounded-[50%] w-[40px] h-[40px]" />
-                  <div className="flex flex-col  w-[100%] ml-1 gap-1">
-                    <p>{friend.name}</p>
+              {users.map((friend) => {
+                const status = request[friend.id] || "adduser";
+                return (
+                  <div className="  flex w-[100%] items-center  pt-2 pb-2 gap-2">
+                    <img src={friend.picture} alt="..." className="rounded-[50%] w-[40px] h-[40px]" />
+                    <div className="flex flex-col  w-[100%] ml-1 gap-1">
+                      <p>{friend.name}</p>
+                    </div>
+                    {status === "adduser" ? (
+                      <button
+                        onClick={() => SendFriendRquest(friend.email, friend.id)}
+                        type="button"
+                        className="w-[10rem] pt-[6px] pb-[6px] pr-2 pl-2 bg-blue-500 cursor-pointer hover:bg-blue-700 text-white rounded-4xl text-[14px]"
+                      >
+                        Add Friend
+                      </button>
+                    ) : status === "requested" ? (
+                      <button
+                        type="button"
+                        className="w-[10rem] pt-[6px] pb-[6px] pr-2 pl-2 bg-blue-500 cursor-pointer hover:bg-blue-700 text-white rounded-4xl text-[14px]"
+                      >
+                        Requested
+                      </button>
+                    ) : null}
                   </div>
-
-                  <button
-                    onClick={() => SendFriendRquest(friend.email)}
-                    type="button"
-                    className="w-[10rem] pt-[6px] pb-[6px] pr-2 pl-2 bg-blue-500 cursor-pointer hover:bg-blue-700 text-white rounded-4xl text-[14px]"
-                  >
-                    Add Friend
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

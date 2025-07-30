@@ -81,24 +81,25 @@ async def refresh(token: RefreshToken):
 @router.get("/get-users")
 async def get_users(db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
 
-    users = db.query(Users).filter(Users.id != current_user.id).order_by(desc(Users.created_at)).limit(50).all()
-
     friends_query = db.query(FriendRequest.to_user_id).filter(
         and_(
-            FriendRequest.status == RequestStatus.accepted,
+            or_(FriendRequest.status == RequestStatus.accepted, 
+            FriendRequest.status == RequestStatus.pending),
             FriendRequest.from_user_id == current_user.id
         )
         
     ).union(
         db.query(FriendRequest.from_user_id).filter(
             and_(
-                FriendRequest.status == RequestStatus.accepted,
+                or_(FriendRequest.status == RequestStatus.accepted,
+                FriendRequest.status == RequestStatus.pending),
+            
                 FriendRequest.to_user_id == current_user.id
             )
         )
     )
 
-    not_friends = db.query(Users).filter(Users.id != current_user.id, ~Users.id.in_(friends_query)).all()
+    not_friends = db.query(Users).filter(Users.id != current_user.id, ~Users.id.in_(friends_query)).limit(50).all()
     
     if not not_friends:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not available")
