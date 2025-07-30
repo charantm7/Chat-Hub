@@ -11,7 +11,7 @@ function ChatArea({ user, onSelect }) {
   if (!user) {
     return (
       <div className="flex-1  flex items-center justify-center p-4 text-gray-400 ">
-        <p className="  p-3 rounded-4xl bg-[#ffffff13]">Select a user to start chatting</p>
+        <p className="  pl-3 pt-1 pb-1 pr-3 rounded-4xl bg-[#ffffff13]">Select a user to start chatting</p>
       </div>
     );
   }
