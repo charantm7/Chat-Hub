@@ -32,10 +32,7 @@ async def get_current_user(token:str = Depends(oauth_scheme), db: Session = Depe
 
     return user
 
-
 async def get_current_user_ws(websocket: WebSocket, db):
-
-    
 
     token = websocket.query_params.get('token')
 

@@ -43,7 +43,46 @@ async def create_access_token(data: dict) -> str:
 
     return access_token
 
+async def create_refresh_token(data: dict) -> str:
 
+    if not data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Data not found!")
+    
+    to_encode = data.copy()
+    expire_time = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({'exp':expire_time})
+
+    refresh_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    return refresh_token
+
+async def validate_refresh_token(token):
+
+    credential_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, 
+        detail="Could not validate credentials", 
+        headers={"WWW-Authenticate":"Bearer"}
+    )
+
+    if not token:
+        raise credential_exception
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get('email')
+
+        if not email:
+            raise credential_exception
+            
+        token_data = user_schema.TokenData(email=email)
+
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_endcode = {'email':token_data.email,'exp':expire }
+        access_token = jwt.encode(to_endcode, SECRET_KEY, algorithm=ALGORITHM)
+
+        return {'access_token':access_token}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 async def validate_access_token(token):
 

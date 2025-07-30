@@ -1,12 +1,52 @@
 import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { GetValidAccessToken, GetAllUsers } from "./index";
 
 const ChatList = ({ onSelect, selectedUser }) => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [users, setUsers] = useState([]);
+  const [request, setRequest] = useState("adduser");
+
+  useEffect(() => {
+    const Getusers = async () => {
+      try {
+        const user = await GetAllUsers();
+        if (user) {
+          setUsers(user);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    Getusers();
+  }, []);
+
+  const SendFriendRquest = async (mail) => {
+    const token = await GetValidAccessToken();
+    if (!token) return;
+    try {
+      const res = await fetch("http://127.0.0.1:8000/v1/chat/invite/friend", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: mail }),
+      });
+
+      if (!res.ok) throw new Error("friend Request failed");
+
+      const data = await res.json();
+
+      console.log(data);
+    } catch (error) {
+      console.log("invte", error);
+    }
+  };
 
   const handleOverlayClick = (e) => {
     if (e.target.id === "overlay") {
@@ -24,8 +64,8 @@ const ChatList = ({ onSelect, selectedUser }) => {
   useEffect(() => {
     const getFriends = async () => {
       try {
-        const token = localStorage.getItem("token");
-
+        const token = await GetValidAccessToken();
+        console.log(token);
         const response = await fetch("http://127.0.0.1:8000/v1/chat/friends", {
           method: "GET",
           headers: {
@@ -155,7 +195,35 @@ const ChatList = ({ onSelect, selectedUser }) => {
           onClick={handleOverlayClick}
           className="fixed inset-0 bg-[#00000085] flex justify-center items-center z-50"
         >
-          <div className="bg-opacity-50 w-[50%] absolute left-[25%] top-[20%] flex flex-col  p-3 bg-[#000c] items-center text-[#ffffffd6] border-1 border-[#ffffff34] rounded-xl"></div>
+          <div className="bg-opacity-50 w-[30%] h-[80%] absolute left-[35%] top-[8%] flex flex-col gap-5  p-6 bg-[#fffc] items-center text-[#000000d6] border-1 border-[#ffffff34] rounded-xl">
+            <div className="flex w-[100%]">
+              <input
+                type="search"
+                name="user"
+                id="user"
+                placeholder="search"
+                className="border-1 w-[100%] h-10 pr-3 pl-5 outline-0 rounded-3xl"
+              />
+            </div>
+            <div className="flex flex-col w-[100%]">
+              {users.map((friend) => (
+                <div className="  flex w-[100%] items-center  pt-2 pb-2 gap-2">
+                  <img src={friend.picture} alt="..." className="rounded-[50%] w-[40px] h-[40px]" />
+                  <div className="flex flex-col  w-[100%] ml-1 gap-1">
+                    <p>{friend.name}</p>
+                  </div>
+
+                  <button
+                    onClick={() => SendFriendRquest(friend.email)}
+                    type="button"
+                    className="w-[10rem] pt-[6px] pb-[6px] pr-2 pl-2 bg-blue-500 cursor-pointer hover:bg-blue-700 text-white rounded-4xl text-[14px]"
+                  >
+                    Add Friend
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
