@@ -2,6 +2,7 @@ import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGear, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { faCircleQuestion } from "@fortawesome/free-solid-svg-icons";
+import { logout } from "./index";
 
 function Navbar() {
   return (
@@ -15,7 +16,11 @@ function Navbar() {
           icon={faGear}
           className="text-[17px] transition-transform hover:animate-spin cursor-pointer"
         />
-        <FontAwesomeIcon icon={faRightFromBracket} className="text-[18px] cursor-pointer" />
+        <FontAwesomeIcon
+          onClick={() => logout()}
+          icon={faRightFromBracket}
+          className="text-[18px] cursor-pointer"
+        />
 
         <div className="pl-[1rem] border-l-1 border-[#e8e8e838]">
           <img

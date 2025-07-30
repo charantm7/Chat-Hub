@@ -1,3 +1,4 @@
+from operator import and_, not_, or_
 import httpx
 
 from fastapi import APIRouter, Request, Depends, HTTPException, status
@@ -8,8 +9,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.utils import security
 from app.core.psql_connection import get_db
-from app.models.user_model import Users
+from app.models.user_model import Users, FriendRequest, RequestStatus
 from app.services import user_service
+from app.schemas.user_schema import RefreshToken
 
 router = APIRouter()
 
@@ -66,19 +68,41 @@ async def google_callback(request: Request,db: Session = Depends(get_db)):
         db.refresh(new_user)
 
     jwt_token = await security.create_access_token({"email":email})
-
-    frontend_url = f"http://localhost:5173/auth/callback?token={jwt_token}"
+    refresh_token = await security.create_refresh_token({'email':email})
+    print('refresh')
+    frontend_url = f"http://localhost:5173/auth/callback?token={jwt_token}&refresh={refresh_token}"
 
     return RedirectResponse(url=frontend_url)
 
-@router.get("/get-users")
-async def get_users(db: Session = Depends(get_db)):
+@router.post('/refresh')
+async def refresh(token: RefreshToken):
+    return await security.validate_refresh_token(token=token.token)
 
-    users = db.query(Users).order_by(desc(Users.created_at)).limit(50).all()
+@router.get("/get-users")
+async def get_users(db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
+
+    users = db.query(Users).filter(Users.id != current_user.id).order_by(desc(Users.created_at)).limit(50).all()
+
+    friends_query = db.query(FriendRequest.to_user_id).filter(
+        and_(
+            FriendRequest.status == RequestStatus.accepted,
+            FriendRequest.from_user_id == current_user.id
+        )
+        
+    ).union(
+        db.query(FriendRequest.from_user_id).filter(
+            and_(
+                FriendRequest.status == RequestStatus.accepted,
+                FriendRequest.to_user_id == current_user.id
+            )
+        )
+    )
+
+    not_friends = db.query(Users).filter(Users.id != current_user.id, ~Users.id.in_(friends_query)).all()
     
-    if not users:
+    if not not_friends:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not available")
 
-    return users
+    return not_friends
 
 

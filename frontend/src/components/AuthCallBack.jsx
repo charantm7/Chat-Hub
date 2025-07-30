@@ -7,9 +7,16 @@ function AuthCallBack() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
+    const refresh = params.get("refresh");
 
-    if (token) {
+    if (token && refresh) {
+      const accessExpiry = Date.now() + 60 * 60 * 1000;
+      const refreshExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
       localStorage.setItem("token", token);
+      localStorage.setItem("refresh", refresh);
+      localStorage.setItem("accessExpiry", accessExpiry);
+      localStorage.setItem("refreshExpiry", refreshExpiry);
+
       setTimeout(() => navigate("/chat", { replace: true }), 0);
     } else {
       console.error("No token found in URL");

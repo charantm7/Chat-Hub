@@ -7,9 +7,13 @@ import { faFaceSmile } from "@fortawesome/free-solid-svg-icons";
 import { faPaperclip } from "@fortawesome/free-solid-svg-icons";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 
-function ChatArea({ user }) {
+function ChatArea({ user, onSelect }) {
   if (!user) {
-    return <div className="flex-1 p-4 text-gray-500">Select a user to start chatting</div>;
+    return (
+      <div className="flex-1  flex items-center justify-center p-4 text-gray-400 ">
+        <p className="  p-3 rounded-4xl bg-[#ffffff13]">Select a user to start chatting</p>
+      </div>
+    );
   }
 
   return (
@@ -23,6 +27,7 @@ function ChatArea({ user }) {
           <FontAwesomeIcon icon={faMagnifyingGlass} className="cursor-pointer" />
           <FontAwesomeIcon icon={faEllipsisVertical} className="cursor-pointer" />
           <FontAwesomeIcon
+            onClick={() => onSelect(null)}
             icon={faXmark}
             className=" p-[3px] pt-1 pb-1 rounded-[50%] cursor-pointer hover:bg-[#ff2b2bdf]"
           />

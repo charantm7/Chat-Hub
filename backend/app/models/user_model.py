@@ -37,7 +37,7 @@ class ChatMembers(Base):
     __tablename__ = 'chatmembers'
 
     id = Column(UUID, primary_key=True, default=uuid4, unique=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
     chat_id = Column(UUID, ForeignKey('chats.id'))
     joined_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
 
@@ -47,7 +47,7 @@ class Message(Base):
 
     id = Column(UUID, primary_key=True, default=uuid4, unique=True)
     chat_id = Column(UUID, ForeignKey("chats.id"))
-    sender_id = Column(Integer, ForeignKey("users.id"))
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
     content = Column(Text)
     sent_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
 
@@ -57,8 +57,8 @@ class FriendRequest(Base):
 
     id = Column(UUID, primary_key=True, default=uuid4, unique=True)
 
-    from_user_id = Column(Integer, ForeignKey("users.id"))
-    to_user_id = Column(Integer, ForeignKey("users.id"))
+    from_user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
+    to_user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
 
     status = Column(Enum(RequestStatus), default=RequestStatus.pending)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
