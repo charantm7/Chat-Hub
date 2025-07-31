@@ -33,7 +33,18 @@ function ChatArea({ user, onSelect }) {
           />
         </div>
       </div>
-      <div className="h-[100%] "></div>
+      <div className="h-[100%] space-y-2 p-3">
+        <div className="text-white text-left   p-3">
+          <p className="inline-block max-w-[70%]  bg-gray-700 pr-4 pl-4 pt-2 pb-2 rounded-4xl break-words">
+            Lorem, ipsum dolor.
+          </p>
+        </div>
+        <div className="text-white text-right p-3">
+          <p className="inline-block max-w-[70%]  bg-blue-600 pr-4 pl-4 pt-2 pb-2 rounded-4xl break-words ">
+            Lorem ipsum dolor sit amet.
+          </p>
+        </div>
+      </div>
       <div className="flex w-[100%] bg-[#01040963] items-center text-[#e8e8e8e0] pr-4 pl-4 gap-4 border-t-1 border-[var(--border-2)]">
         <FontAwesomeIcon icon={faFaceSmile} className="text-[20px]" />
         <input
