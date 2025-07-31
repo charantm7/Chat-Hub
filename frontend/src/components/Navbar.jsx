@@ -5,16 +5,19 @@ import { faCircleQuestion } from "@fortawesome/free-solid-svg-icons";
 import { GetValidAccessToken, logout } from "./index";
 import { faUserPlus, faInbox } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
+import { getFriends } from "./ChatList";
 
 function Navbar() {
   const [showModal, setShowModal] = useState(null);
   const [friendRequests, setFriendRequest] = useState([]);
   const [count, setCount] = useState(null);
   const [requestStatus, setRequestStatus] = useState({});
+  const [user, setUser] = useState([]);
 
   const handleOverlayClick = (e) => {
     if (e.target.id == "overlay") {
       setShowModal(null);
+      window.location.reload();
     }
   };
 
@@ -33,6 +36,7 @@ function Navbar() {
 
       const data = await res.json();
       setRequestStatus((prev) => ({ ...prev, [id]: "Accepted" }));
+      await getFriends();
       console.log(data);
     } catch (error) {
       console.log("accept", error);
@@ -53,6 +57,7 @@ function Navbar() {
 
       const data = await res.json();
       setRequestStatus((prev) => ({ ...prev, [id]: "Rejected" }));
+      await getFriends();
       console.log(data);
     } catch (error) {
       console.log("accept", error);
@@ -82,6 +87,29 @@ function Navbar() {
         console.log(error);
       }
     };
+    const getUser = async () => {
+      const token = await GetValidAccessToken();
+      console.log(token);
+      try {
+        const response = await fetch("http://127.0.0.1:8000/", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response) {
+          throw new Error("Unauthorized ");
+        }
+        const data = await response.json();
+        console.log(data);
+        setUser(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    getUser();
     getIncomingRequest();
   }, []);
 
@@ -120,11 +148,7 @@ function Navbar() {
         />
 
         <div className="pl-[1rem] border-l-1 border-[#e8e8e838]">
-          <img
-            src="https://cdn-icons-png.flaticon.com/512/219/219988.png"
-            alt=".."
-            className="rounded-[50%] h-[35px] w-[35px] cursor-pointer"
-          />
+          <img src={user.picture} alt=".." className="rounded-[50%] h-[35px] w-[35px] cursor-pointer" />
         </div>
       </div>
       {showModal == "add" && (

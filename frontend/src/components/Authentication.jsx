@@ -4,19 +4,19 @@ import { useEffect } from "react";
 import ChatBg from "../assets/chat-app-bg.jpg";
 import HandImg from "../assets/hand-chat.png";
 import { useNavigate } from "react-router-dom";
+import { GetValidAccessToken, logout } from "./index";
 
 const GOOGLE_LOGIN_URL = "http://127.0.0.1:8000/v1/auth/login/google";
 
 function Authentication() {
   const [user, setUser] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [IsLoggedIn, setIsLoggedIn] = useState(false);
 
-  const token = localStorage.getItem("token");
-  const IsLoggedIn = !!token;
-  const navigate = useNavigate();
   const Logout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
+    logout();
+    setIsLoggedIn(false);
+    setLoading(false);
   };
 
   const HandleGoogleLogin = () => {
@@ -24,11 +24,19 @@ function Authentication() {
   };
   useEffect(() => {
     const getUser = async () => {
+      const token = await GetValidAccessToken();
+      console.log(token);
+      if (!token) {
+        setIsLoggedIn(false);
+        setLoading(false);
+        return;
+      }
+      setIsLoggedIn(true);
       try {
         const response = await fetch("http://127.0.0.1:8000/", {
           method: "GET",
           headers: {
-            "Cotent-Type": "application/json",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         });
@@ -37,6 +45,7 @@ function Authentication() {
           throw new Error("Unauthorized ");
         }
         const data = await response.json();
+        console.log(data);
         setUser(data);
       } catch (error) {
         console.error(error);

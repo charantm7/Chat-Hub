@@ -11,7 +11,6 @@ export function isRefreshTokenExpired() {
 export async function refreshAccessToken() {
   const refresh = localStorage.getItem("refresh");
   if (!refresh || isRefreshTokenExpired()) {
-    logout();
     return null;
   }
 

@@ -3,6 +3,23 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { GetValidAccessToken, GetAllUsers } from "./index";
 
+export async function getFriends(token) {
+  const response = await fetch("http://127.0.0.1:8000/v1/chat/friends", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Unauthorized or failed to fetch friends");
+  }
+  const data = await response.json();
+  console.log(data);
+  return data;
+}
+
 const ChatList = ({ onSelect, selectedUser }) => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,31 +79,18 @@ const ChatList = ({ onSelect, selectedUser }) => {
   });
 
   useEffect(() => {
-    const getFriends = async () => {
+    const loadUser = async () => {
       try {
         const token = await GetValidAccessToken();
-        console.log(token);
-        const response = await fetch("http://127.0.0.1:8000/v1/chat/friends", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Unauthorized or failed to fetch friends");
-        }
-        const data = await response.json();
-        console.log(data);
+        const data = await getFriends(token);
         setFriends(data);
       } catch (error) {
-        console.error("Error fetching Chats", error);
+        console.log(error);
       } finally {
         setLoading(false);
       }
     };
-    getFriends();
+    loadUser();
   }, []);
 
   return (
