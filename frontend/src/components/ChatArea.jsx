@@ -16,11 +16,12 @@ function ChatArea({ user, onSelect }) {
   const [token, setToken] = useState(null);
   const [currentUserID, setCurrentUserID] = useState(null);
   const socketRef = useRef(null);
-  const messagesEndRef = useRef(null); // ✅ ref to scroll to bottom
+  const messagesEndRef = useRef(null);
 
   const chatMessages = messages[user?.chat_id] || [];
 
-  // ✅ Auto-scroll whenever chatMessages change
+  const sortedMessages = [...(chatMessages || [])].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -75,7 +76,7 @@ function ChatArea({ user, onSelect }) {
 
     socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${user.chat_id}?token=${token}`);
 
-    socketRef.current.onopen = () => console.log("✅ WebSocket connected");
+    socketRef.current.onopen = () => console.log("WebSocket connected");
 
     socketRef.current.onmessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -83,17 +84,17 @@ function ChatArea({ user, onSelect }) {
       setMessages((prev) => {
         const previous = prev[user?.chat_id] || [];
 
-        // ✅ Avoid duplicates
         if (previous.some((m) => m.id === msg.id)) return prev;
 
+        const updated = [...previous, msg].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
         return {
           ...prev,
-          [user?.chat_id]: [...previous, msg],
+          [user?.chat_id]: updated,
         };
       });
     };
 
-    socketRef.current.onclose = () => console.log("❌ WebSocket closed");
+    socketRef.current.onclose = () => console.log(" WebSocket closed");
 
     return () => socketRef.current?.close();
   }, [token, user?.chat_id, currentUserID?.id]);
@@ -162,12 +163,16 @@ function ChatArea({ user, onSelect }) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-3 p-3">
-        {chatMessages.map((msg) => (
+        {sortedMessages.map((msg) => (
           <div
             key={msg.id}
             className={`p-3 ${msg.sender_id === currentUserID?.id ? "text-right" : "text-left"}`}
           >
-            <p className="inline-block max-w-[70%] bg-gray-700 text-white pr-4 pl-4 pt-2 pb-2 rounded-4xl break-words">
+            <p
+              className={`inline-block max-w-[70%] ${
+                msg.sender_id === currentUserID?.id ? "bg-blue-600" : "bg-gray-700"
+              } text-white pr-4 pl-4 pt-2 pb-2 rounded-4xl break-words`}
+            >
               {msg.content}
             </p>
           </div>
@@ -182,13 +187,11 @@ function ChatArea({ user, onSelect }) {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyPress} // ✅ Send on Enter
+          onKeyDown={handleKeyPress}
           placeholder="Write a message..."
           className="w-full h-[3.3rem] outline-0 bg-transparent text-white"
         />
-        <button className="px-4 bg-blue-500 hover:bg-blue-600 rounded-r-lg" onClick={sendMessage}>
-          Send
-        </button>
+
         <FontAwesomeIcon icon={faPaperclip} className="text-[20px]" />
         <FontAwesomeIcon icon={faMicrophone} className="text-[20px]" />
       </div>
