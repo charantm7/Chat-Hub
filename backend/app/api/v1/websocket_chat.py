@@ -48,7 +48,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
             await manager.broadcast(
                 chat_id,
-                {
+                {   "sender_id": current_user.id,
                     "sender": current_user.name,
                     "message": content,
                     "timestamp": new_message.sent_at.isoformat()

@@ -148,7 +148,12 @@ function Navbar() {
         />
 
         <div className="pl-[1rem] border-l-1 border-[#e8e8e838]">
-          <img src={user.picture} alt=".." className="rounded-[50%] h-[35px] w-[35px] cursor-pointer" />
+          <img
+            src={user.picture}
+            referrerPolicy="no-referrer"
+            alt=".."
+            className="rounded-[50%] h-[35px] w-[35px] cursor-pointer"
+          />
         </div>
       </div>
       {showModal == "add" && (
