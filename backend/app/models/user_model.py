@@ -13,16 +13,17 @@ class RequestStatus(str, enum.Enum):
     rejected = "rejected"
 
 
-
 class Users(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     name = Column(String, nullable=False)
-    email = Column(String, nullable=False, unique=True )
+    email = Column(String, nullable=False, unique=True)
     picture = Column(String, nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True),
+                        server_default=text('now()'), nullable=False)
     is_verified = Column(Boolean, nullable=False, default=False)
+
 
 class Chats(Base):
     __tablename__ = 'chats'
@@ -30,7 +31,8 @@ class Chats(Base):
     id = Column(UUID, primary_key=True, default=uuid4, unique=True)
     name = Column(String, nullable=True)
     is_group = Column(Boolean, default=False)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True),
+                        server_default=text('now()'), nullable=False)
 
 
 class ChatMembers(Base):
@@ -39,7 +41,8 @@ class ChatMembers(Base):
     id = Column(UUID, primary_key=True, default=uuid4, unique=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
     chat_id = Column(UUID, ForeignKey('chats.id'))
-    joined_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+    joined_at = Column(TIMESTAMP(timezone=True),
+                       server_default=text('now()'), nullable=False)
 
 
 class Message(Base):
@@ -49,7 +52,8 @@ class Message(Base):
     chat_id = Column(UUID, ForeignKey("chats.id"))
     sender_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
     content = Column(Text)
-    sent_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+    sent_at = Column(TIMESTAMP(timezone=True),
+                     server_default=text('now()'), nullable=False)
 
 
 class FriendRequest(Base):
@@ -61,9 +65,8 @@ class FriendRequest(Base):
     to_user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
 
     status = Column(Enum(RequestStatus), default=RequestStatus.pending)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True),
+                        server_default=text('now()'), nullable=False)
 
     from_user = relationship("Users", foreign_keys=[from_user_id])
     to_user = relationship("Users", foreign_keys=[to_user_id])
-
-    
