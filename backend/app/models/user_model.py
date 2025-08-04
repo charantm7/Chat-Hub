@@ -56,7 +56,6 @@ class Message(Base):
                      server_default=text('now()'), nullable=False)
 
 
-
 class FriendRequest(Base):
     __tablename__ = "friendrequest"
 
