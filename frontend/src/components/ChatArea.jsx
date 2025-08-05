@@ -19,16 +19,15 @@ function ChatArea({ user, onSelect }) {
   const messagesEndRef = useRef(null);
 
   const chatMessages = messages[user?.chat_id] || [];
+  const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
-  const sortedMessages = [...(chatMessages || [])].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-
+  const prevChatId = useRef(null);
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" }); // ✅ No animation
     }
   }, [chatMessages]);
-
-  // ✅ Fetch Token and Current User
+  // ✅ Fetch token and current user
   useEffect(() => {
     const init = async () => {
       const t = await GetValidAccessToken();
@@ -50,7 +49,7 @@ function ChatArea({ user, onSelect }) {
     init();
   }, []);
 
-  // ✅ Fetch Initial Messages
+  // ✅ Load initial chat messages
   useEffect(() => {
     if (!token || !user?.chat_id) return;
     (async () => {
@@ -80,36 +79,65 @@ function ChatArea({ user, onSelect }) {
 
     socketRef.current.onmessage = (event) => {
       const msg = JSON.parse(event.data);
+      console.log("Received:", msg);
+
+      if (msg.Message) return; // Ignore system messages
 
       setMessages((prev) => {
-        const previous = prev[user?.chat_id] || [];
+        const chatId = user?.chat_id;
+        if (!chatId) return prev;
 
-        if (previous.some((m) => m.id === msg.id)) return prev;
+        const previous = prev[chatId] || [];
 
-        const updated = [...previous, msg].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-        return {
-          ...prev,
-          [user?.chat_id]: updated,
+        // ✅ Normalize backend message fields
+        const incomingMsg = {
+          ...msg,
+          sent_at: msg.sent_at || msg.timestamp,
+          content: msg.content || msg.message,
         };
+
+        // ✅ Check if we already have a local "temp" message that matches this
+        const existingIndex = previous.findIndex(
+          (m) =>
+            m.sender_id === incomingMsg.sender_id &&
+            m.content === incomingMsg.content &&
+            m.id.startsWith("temp-")
+        );
+
+        let updated;
+        if (existingIndex !== -1) {
+          // ✅ Replace temporary message with real one
+          updated = [...previous];
+          updated[existingIndex] = incomingMsg;
+        } else if (!previous.some((m) => m.id === incomingMsg.id)) {
+          // ✅ Only add if not already exists
+          updated = [...previous, incomingMsg];
+        } else {
+          updated = previous;
+        }
+
+        updated.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+        return { ...prev, [chatId]: updated };
       });
     };
 
-    socketRef.current.onclose = () => console.log(" WebSocket closed");
-
+    socketRef.current.onclose = () => console.log("WebSocket closed");
     return () => socketRef.current?.close();
   }, [token, user?.chat_id, currentUserID?.id]);
 
+  // ✅ Sending Message
   const sendMessage = () => {
     if (!input.trim()) return;
 
     const newMsg = {
-      id: crypto.randomUUID(),
+      id: "temp-" + crypto.randomUUID(), // ✅ temp ID
       sender_id: currentUserID?.id,
       content: input,
       chat_id: user?.chat_id,
       sent_at: new Date().toISOString(),
     };
 
+    // ✅ Optimistically add message
     setMessages((prev) => {
       const previous = prev[user?.chat_id] || [];
       return {
@@ -118,6 +146,7 @@ function ChatArea({ user, onSelect }) {
       };
     });
 
+    // ✅ Send to WebSocket
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({ data: input }));
     }
@@ -125,7 +154,6 @@ function ChatArea({ user, onSelect }) {
     setInput("");
   };
 
-  // ✅ Handle Enter Key to Send Message
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -133,7 +161,6 @@ function ChatArea({ user, onSelect }) {
     }
   };
 
-  // ✅ If No User Selected
   if (!user) {
     return (
       <div className="flex-1 flex items-center justify-center p-4 text-gray-400">
@@ -162,7 +189,7 @@ function ChatArea({ user, onSelect }) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-3 p-3">
+      <div className="flex-1 overflow-y-auto space-y-3 p-3 hide-scrollbar">
         {sortedMessages.map((msg) => (
           <div
             key={msg.id}
@@ -171,13 +198,12 @@ function ChatArea({ user, onSelect }) {
             <p
               className={`inline-block max-w-[70%] ${
                 msg.sender_id === currentUserID?.id ? "bg-blue-600" : "bg-gray-700"
-              } text-white pr-4 pl-4 pt-2 pb-2 rounded-4xl break-words`}
+              } text-white pr-4 pl-4 pt-2 pb-2 rounded-[10px] break-words`}
             >
               {msg.content}
             </p>
           </div>
         ))}
-        {/* ✅ Auto Scroll Target */}
         <div ref={messagesEndRef} />
       </div>
 
@@ -189,9 +215,8 @@ function ChatArea({ user, onSelect }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}
           placeholder="Write a message..."
-          className="w-full h-[3.3rem] outline-0 bg-transparent text-white"
+          className="w-full h-[4rem] outline-0 bg-transparent text-white"
         />
-
         <FontAwesomeIcon icon={faPaperclip} className="text-[20px]" />
         <FontAwesomeIcon icon={faMicrophone} className="text-[20px]" />
       </div>
