@@ -139,7 +139,7 @@ function Authentication() {
           </div>
         ) : (
           <div>
-            <p className="absolute top-[9rem] left-[25rem] bg-[#ffffff13] pt-3 pb-3 pr-5 pl-5 rounded-4xl opacity-80 text-[13px]">
+            <p className="absolute top-[9rem] left-[25rem] bg-[#ffffff13] pt-2 pb-2 pr-5 pl-5 rounded-4xl opacity-80 text-[13px]">
               Try Demo
             </p>
             <button

@@ -2,12 +2,12 @@ from typing import Dict, List
 from uuid import UUID
 from fastapi import WebSocket
 
+
 class ConnectionManager:
 
     def __init__(self):
-        
-        self.active_connections: Dict[UUID, List[WebSocket]] = {}
 
+        self.active_connections: Dict[UUID, List[WebSocket]] = {}
 
     async def connect(self, chat_id: UUID, websocket: WebSocket):
 
@@ -18,9 +18,9 @@ class ConnectionManager:
 
         self.active_connections[chat_id].append(websocket)
 
-        await websocket.send_json({"Message":"Connected to chat"})
+        await websocket.send_json({"Message": "Connected to chat"})
 
-    def disconnect(self, chat_id:UUID, websocket: WebSocket):
+    def disconnect(self, chat_id: UUID, websocket: WebSocket):
 
         if chat_id in self.active_connections:
             self.active_connections[chat_id].remove(websocket)
@@ -28,10 +28,11 @@ class ConnectionManager:
             if not self.active_connections[chat_id]:
                 del self.active_connections[chat_id]
 
-    async def broadcast(self, chat_id: UUID, message: str):
+    async def broadcast(self, chat_id: UUID, message: dict):
 
         if chat_id in self.active_connections:
-            print(f"Broadcasting to {len(self.active_connections[chat_id])} connections")
+            print(
+                f"Broadcasting to {len(self.active_connections[chat_id])} connections")
 
             for connection in list(self.active_connections[chat_id]):
 

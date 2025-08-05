@@ -20,7 +20,8 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
     print("authenticated")
 
-    member = db.query(ChatMembers).filter(ChatMembers.chat_id == chat_id, ChatMembers.user_id == current_user.id).first()
+    member = db.query(ChatMembers).filter(
+        ChatMembers.chat_id == chat_id, ChatMembers.user_id == current_user.id).first()
 
     if not member:
         await websocket.close(code=1008)
@@ -34,10 +35,11 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
         while True:
 
             data = await websocket.receive_json()
+            print("Received from client:", data)
             content = data.get('data')
 
             new_message = Message(
-                chat_id=chat_id,    
+                chat_id=chat_id,
                 sender_id=current_user.id,
                 content=content
             )
@@ -48,10 +50,12 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
             await manager.broadcast(
                 chat_id,
-                {   "sender_id": current_user.id,
+                {
+                    "id": str(new_message.id),
+                    "sender_id": current_user.id,
                     "sender": current_user.name,
-                    "message": content,
-                    "timestamp": new_message.sent_at.isoformat()
+                    "content": content,
+                    "sent_at": new_message.sent_at.isoformat()
                 }
             )
     except WebSocketDisconnect:
