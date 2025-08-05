@@ -61,7 +61,7 @@ function ChatArea({ user, onSelect }) {
         const data = await res.json();
         setMessages((prev) => ({
           ...prev,
-          [user.chat_id]: Array.isArray(data) ? data : [],
+          [user.chat_id]: Array.isArray(data.messages) ? data.messages : [],
         }));
       } catch (err) {
         console.error(err);
