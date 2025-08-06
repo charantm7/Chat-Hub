@@ -11,7 +11,7 @@ from app.utils import security
 from app.core.psql_connection import get_db
 from app.models.user_model import Users, FriendRequest, RequestStatus
 from app.services import user_service
-from app.schemas.user_schema import RefreshToken
+from app.schemas.user_schema import RefreshToken, UpdateProfile
 
 router = APIRouter()
 
@@ -72,7 +72,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         db.refresh(new_user)
 
     jwt_token = await security.create_access_token({"email": email})
-    refresh_token = await security.create_refresh_token({'email': email})
+    refresh_token = await security.create_refresh_token({"email": email})
     print('refresh')
     frontend_url = f"http://localhost:5173/auth/callback?token={jwt_token}&refresh={refresh_token}"
 
@@ -117,6 +117,28 @@ async def get_users(db: Session = Depends(get_db), current_user: Users = Depends
 
 
 @router.put("/update/my/profile")
-async def update_my_profile(db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
+async def update_my_profile(user_info: UpdateProfile, db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
 
-    pass
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Not authenticated")
+
+    user_query = db.query(Users).filter(Users.id == current_user.id)
+
+    user = user_query.first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    update_data = user_info.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(user, key if key != 'd_o_b' else 'date_of_birth', value)
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        'msg': 'user profile updated successfully',
+        'user': user
+    }

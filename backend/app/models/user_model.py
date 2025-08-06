@@ -1,6 +1,6 @@
 import enum
 from uuid import uuid4
-from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, String, Integer, UUID, Text, Enum
+from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, String, Integer, UUID, Text, Enum, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
@@ -23,6 +23,10 @@ class Users(Base):
     created_at = Column(TIMESTAMP(timezone=True),
                         server_default=text('now()'), nullable=False)
     is_verified = Column(Boolean, nullable=False, default=False)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    date_of_birth = Column(Date, nullable=True)
+    about = Column(String, nullable=True)
 
 
 class Chats(Base):
