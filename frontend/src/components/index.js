@@ -18,7 +18,7 @@ export async function refreshAccessToken() {
     const res = await fetch("http://127.0.0.1:8000/v1/auth/refresh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh }),
+      body: JSON.stringify({ token: refresh }),
     });
     if (!res.ok) throw new Error("Refresh Failed");
     const data = await res.json();
