@@ -2,7 +2,6 @@ from uuid import UUID
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, Depends
 
 from sqlalchemy.orm import Session
-
 from app.core.psql_connection import get_db
 from app.models.user_model import ChatMembers, Message
 from app.services.user_service import get_current_user_ws
