@@ -183,7 +183,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
         <div
           id="overlay"
           onClick={handleOverlayClick}
-          className="fixed inset-0 bg-[#00000085] flex justify-center items-center z-50"
+          className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex justify-center items-center z-50"
         >
           <div className="bg-opacity-50 absolute left-[25%] top-[20%] flex flex-col  p-3 bg-[#000c] items-center text-[#ffffffd6] border-1 border-[#ffffff34] rounded-xl">
             <p
@@ -202,7 +202,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
         <div
           id="overlay"
           onClick={handleOverlayClick}
-          className="fixed inset-0 bg-[#00000085] flex justify-center items-center z-50"
+          className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex justify-center items-center z-50"
         >
           <div className="bg-opacity-50 w-[30%] h-[80%] absolute left-[35%] top-[8%] flex flex-col gap-5  p-6 bg-[#fffc] items-center text-[#000000d6] border-1 border-[#ffffff34] rounded-xl">
             <div className="flex w-[100%]">
