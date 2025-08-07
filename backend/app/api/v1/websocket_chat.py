@@ -18,7 +18,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
     current_user = await get_current_user_ws(websocket=websocket, db=db)
 
     print("authenticated")
-
+    print(current_user)
     member = db.query(ChatMembers).filter(
         ChatMembers.chat_id == chat_id, ChatMembers.user_id == current_user.id).first()
 
@@ -54,7 +54,8 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                     "sender_id": current_user.id,
                     "sender": current_user.name,
                     "content": content,
-                    "sent_at": new_message.sent_at.isoformat()
+                    "sent_at": new_message.sent_at.strftime("%I:%M %p"),
+                    "sent_time": new_message.sent_at.strftime("%I:%M %p"),
                 }
             )
     except WebSocketDisconnect:

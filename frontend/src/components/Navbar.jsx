@@ -7,7 +7,7 @@ import { faUserPlus, faInbox } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
 import { getFriends } from "./ChatList";
 
-function Navbar() {
+function Navbar({ onSelect }) {
   const [showModal, setShowModal] = useState(null);
   const [friendRequests, setFriendRequest] = useState([]);
   const [count, setCount] = useState(null);
@@ -149,6 +149,7 @@ function Navbar() {
 
         <div className="pl-[1rem] border-l-1 border-[#e8e8e838]">
           <img
+            onClick={() => onSelect("account")}
             src={user.picture}
             referrerPolicy="no-referrer"
             alt=".."
@@ -160,7 +161,7 @@ function Navbar() {
         <div
           id="overlay"
           onClick={handleOverlayClick}
-          className="inset-0 fixed bg-[#0000006c] flex items-center justify-center z-50"
+          className="inset-0 fixed bg-[#0000006c] backdrop-blur-[2px] flex items-center justify-center z-50"
         >
           <div className="bg-opacity-50 absolute right-[18%] top-[8%] flex flex-col  p-3 bg-[#000c] items-center text-[#ffffffd6] border-1 border-[#ffffff34] rounded-xl">
             <p
@@ -179,7 +180,7 @@ function Navbar() {
         <div
           id="overlay"
           onClick={handleOverlayClick}
-          className="fixed inset-0 bg-[#00000085] flex justify-center items-center z-50"
+          className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex justify-center items-center z-50"
         >
           <div className="bg-opacity-50 w-[30%] h-[80%] absolute left-[35%] top-[8%] flex flex-col gap-5  p-6 bg-[#fffc] items-center text-[#000000d6] border-1 border-[#ffffff34] rounded-xl">
             <div className="flex w-[100%]">
@@ -199,7 +200,7 @@ function Navbar() {
         <div
           id="overlay"
           onClick={handleOverlayClick}
-          className="fixed inset-0 bg-[#00000085] flex justify-center items-center z-50"
+          className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex justify-center items-center z-50"
         >
           <div className="bg-opacity-50 w-[30%] h-[80%] absolute left-[35%] top-[8%] flex flex-col gap-5  p-6 bg-[#fffc] items-center text-[#000000d6] border-1 border-[#ffffff34] rounded-xl">
             <div className="flex w-[100%]">

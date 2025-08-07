@@ -81,8 +81,8 @@ async def validate_refresh_token(token):
             raise credential_exception
 
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_endcode = {'email': email, 'exp': expire}
-        access_token = jwt.encode(to_endcode, SECRET_KEY, algorithm=ALGORITHM)
+        to_encode = {'email': email, 'exp': expire}
+        access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
         return {'access_token': access_token}
     except Exception as e:

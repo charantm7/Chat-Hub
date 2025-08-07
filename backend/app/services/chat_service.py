@@ -1,4 +1,5 @@
 from operator import and_, or_
+from pytz import timezone
 from fastapi import HTTPException, status
 
 from fastapi.encoders import jsonable_encoder
@@ -187,6 +188,10 @@ async def get_accepted_friends(db, current_user):
         friends.append({
             "id": friend.id,
             "name": friend.name,
+            "first_name": friend.first_name,
+            "about": friend.about,
+            "last_name": friend.last_name,
+            "d_o_b": friend.date_of_birth,
             "email": friend.email,
             "picture": friend.picture,
             "chat_id": chat.id if chat else None
@@ -250,7 +255,21 @@ async def get_messages(db, chat_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
 
+    ist = timezone("Asia/Kolkata")  # if you want IST time
+    formatted_messages = [
+        {
+            "id": m.id,
+            "sender_id": m.sender_id,
+            "content": m.content,
+            "sent_at": m.sent_at.isoformat(),
+            "sent_time": m.sent_at.astimezone(ist).strftime("%I:%M %p")
+
+        }
+        for m in messages
+    ]
+
     return {
         "success": True,
-        "messages": messages
+        "messages": formatted_messages,
+
     }
