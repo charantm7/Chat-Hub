@@ -138,7 +138,4 @@ async def update_my_profile(user_info: UpdateProfile, db: Session = Depends(get_
     db.commit()
     db.refresh(user)
 
-    return {
-        'msg': 'user profile updated successfully',
-        'user': user
-    }
+    return user
