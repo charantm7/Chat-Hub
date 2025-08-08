@@ -219,7 +219,7 @@ function ChatArea({ user, onSelect }) {
               } text-white pr-4 pl-4 pt-2 pb-[22px] rounded-[7px] break-words`}
               onContextMenu={(e) => {
                 e.preventDefault();
-                setContextMenu({ x: e.pageX, y: e.pageY, msgId: msg.id });
+                setContextMenu({ x: e.pageX, y: e.pageY, msgId: msg.id, senderId: msg.sender_id });
               }}
             >
               {msg.content}
@@ -271,9 +271,7 @@ function ChatArea({ user, onSelect }) {
                   <p className="border-b-3 w-[3.1rem] ">Details</p>
                   <p className="pt-1 pb-1 pl-3  rounded-md bg-[#b7b7b7b3]">First name: {user.first_name}</p>
                   <p className="pt-1 pb-1 pl-3 rounded-md bg-[#b7b7b7b3]">Last name: {user.last_name}</p>
-                  <p className="pt-1 pb-1 pl-3  rounded-md bg-[#b7b7b7b3]">
-                    Date of birth: {user.date_of_birth}
-                  </p>
+                  <p className="pt-1 pb-1 pl-3  rounded-md bg-[#b7b7b7b3]">Date of birth: {user.d_o_b}</p>
                 </div>
                 <div className="w-[60%] mt-10 h-full flex flex-col pb-10 gap-[1rem]">
                   <p className="border-b-3 w-[2.7rem] ">About</p>
@@ -296,18 +294,22 @@ function ChatArea({ user, onSelect }) {
           >
             Info
           </li>
-          <li
-            className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-            onClick={() => handleEdit(contextMenu.msgId)}
-          >
-            Edit
-          </li>
-          <li
-            className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-            onClick={() => handleDelete(contextMenu.msgId)}
-          >
-            Delete
-          </li>
+          {contextMenu.senderId == currentUserID.id && (
+            <div>
+              <li
+                className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+                onClick={() => handleEdit(contextMenu.msgId)}
+              >
+                Edit
+              </li>
+              <li
+                className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+                onClick={() => handleDelete(contextMenu.msgId)}
+              >
+                Delete
+              </li>
+            </div>
+          )}
           <li
             className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
             onClick={() => handleSelect(contextMenu.msgId)}

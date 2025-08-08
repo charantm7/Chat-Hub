@@ -17,6 +17,7 @@ from app.services.chat_service import (
     send_messages,
     get_messages,
 )
+from backend.app.services import user_service
 
 
 chat = APIRouter()
@@ -83,3 +84,21 @@ async def get_message(
     current_user: Users = Depends(get_current_user)
 ):
     return await get_messages(db=db, chat_id=chat_id)
+
+
+@chat.delete('/delete/{message_id}')
+async def delete_message(message_id: UUID, db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
+
+    message_query = db.query(Message).filter(
+        Message.id == message_id, Message.sender_id == current_user.id)
+
+    message = message_query.one_or_none()
+
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+
+    message_query.delete(synchronize_session=False)
+    db.commit()
+
+    return {'msg': 'Message deleted'}
