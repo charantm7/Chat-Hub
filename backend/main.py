@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response,status, Depends
+from fastapi import FastAPI, Response, status, Depends
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -8,12 +8,12 @@ from app.core.config import settings
 from app.services.user_service import get_current_user
 from app.models.user_model import Users
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
     """This handles the server starting and shutdown, loads before the app instance"""
     print('Server starting...')
-    yield 
+    yield
     print('Server shutdown...')
 
 
@@ -30,18 +30,20 @@ app.add_middleware(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["*"],
-    allow_credentials = True,
-    allow_headers = ["*"],
-    allow_methods = ["*"]
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_headers=["*"],
+    allow_methods=["*"]
 )
 
 app.include_router(api_router)
+
 
 @app.get('/favicon.ico')
 async def favicon():
     """Prevents from the favicon 404 logs"""
     return Response(status_code=status.HTTP_200_OK)
+
 
 @app.get('/')
 async def health(current_user: Users = Depends(get_current_user)):

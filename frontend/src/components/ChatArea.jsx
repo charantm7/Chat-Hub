@@ -7,6 +7,7 @@ import {
   faFaceSmile,
   faPaperclip,
   faMicrophone,
+  faPenToSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { GetValidAccessToken } from "./index";
 import profileBg from "../assets/profile.jpg";
