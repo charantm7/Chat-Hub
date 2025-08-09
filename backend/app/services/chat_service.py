@@ -1,9 +1,9 @@
-from operator import and_, or_
+
 from pytz import timezone
 from fastapi import HTTPException, status
 
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import desc
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import aliased
 
 from app.models.user_model import (
@@ -185,6 +185,28 @@ async def get_accepted_friends(db, current_user):
             .first()
         )
 
+        last_message_time = None
+        last_message = None
+        unread = None
+        if chat:
+
+            last_message = (
+                db.query(Message).filter(
+                    Message.chat_id == chat.id,
+                    Message.sender_id != current_user.id,
+                ).order_by(desc(Message.sent_at)).first()
+            )
+            if last_message:
+                last_message_time = last_message.sent_at
+                last_message = last_message.content
+
+            unread = db.query(Message).filter(
+                Message.chat_id == chat.id,
+                Message.sender_id != current_user.id,
+                Message.is_read == False
+
+            ).count()
+
         friends.append({
             "id": friend.id,
             "name": friend.name,
@@ -194,8 +216,16 @@ async def get_accepted_friends(db, current_user):
             "d_o_b": friend.date_of_birth,
             "email": friend.email,
             "picture": friend.picture,
-            "chat_id": chat.id if chat else None
+            "chat_id": chat.id if chat else None,
+            "last_message_time": last_message_time,
+            "last_message": last_message,
+            "unread": unread
         })
+
+        friends.sort(
+            key=lambda f: f["last_message_time"] or "1970-01-01",
+            reverse=True
+        )
 
     return friends
 
@@ -259,6 +289,7 @@ async def get_messages(db, chat_id):
     formatted_messages = [
         {
             "id": m.id,
+            "chat_id": m.chat_id,
             "sender_id": m.sender_id,
             "content": m.content,
             "sent_at": m.sent_at.isoformat(),

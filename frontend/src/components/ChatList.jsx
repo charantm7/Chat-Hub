@@ -28,6 +28,31 @@ const ChatList = ({ onSelect, selectedUser }) => {
   const [users, setUsers] = useState([]);
   const [request, setRequest] = useState({});
 
+  function formatLastMessageTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+
+    const isToday = date.toDateString() === now.toDateString();
+
+    if (isToday) {
+      // Show only the time if it's today
+      return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+
+    // Check if in the same week
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday start
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    if (date >= startOfWeek) {
+      // Show weekday name if this week
+      return date.toLocaleDateString([], { weekday: "long" });
+    }
+
+    // Otherwise show abbreviated month and day
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
   useEffect(() => {
     const Getusers = async () => {
       try {
@@ -83,15 +108,35 @@ const ChatList = ({ onSelect, selectedUser }) => {
       try {
         const token = await GetValidAccessToken();
         const data = await getFriends(token);
+
         setFriends(data);
       } catch (error) {
-        console.log(error);
+        console.error("Error loading friends:", error);
       } finally {
         setLoading(false);
       }
     };
+
     loadUser();
   }, []);
+
+  const get_unread = async () => {
+    const token = await GetValidAccessToken();
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/v1/chat/unread/${friends.chat_id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("request failed");
+      const data = await res.json();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <div className="flex text-[#e8e8e8e0] flex-col w-[25%] border-r-1 border-[var(--border)]  ">
@@ -169,11 +214,18 @@ const ChatList = ({ onSelect, selectedUser }) => {
               />
               <div className="flex flex-col w-[100%] ml-1 gap-1">
                 <p>{friend.name}</p>
-                <small className="opacity-70">hi what do you do?</small>
+                <small className="opacity-70">{friend.last_message}</small>
               </div>
               <div className="flex flex-col  gap-1 items-end">
-                <p className="text-[13px]">11/5/25</p>
-                <p className="text-[11px] bg-[#31363ee0]  pt-[.7px] pr-2 pb-[.7px] pl-2 rounded-xl">3</p>
+                <p className="text-[13px] inline-block text-nowrap">
+                  {formatLastMessageTime(friend.last_message_time)}
+                </p>
+
+                {friend.unread > 0 && (
+                  <p className="text-[11px] bg-[#31363ee0]  pt-[.7px] pr-2 pb-[.7px] pl-2 rounded-xl">
+                    {friend.unread}
+                  </p>
+                )}
               </div>
             </div>
           </div>
