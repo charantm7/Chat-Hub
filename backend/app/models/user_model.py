@@ -28,6 +28,8 @@ class Users(Base):
     date_of_birth = Column(Date, nullable=True)
     about = Column(String, nullable=True)
 
+    messages = relationship('Message', back_populates='sender')
+
 
 class Chats(Base):
     __tablename__ = 'chats'
@@ -58,6 +60,9 @@ class Message(Base):
     content = Column(Text)
     sent_at = Column(TIMESTAMP(timezone=True),
                      server_default=text('now()'), nullable=False)
+    is_read = Column(Boolean, default=False)
+
+    sender = relationship('Users', back_populates='messages')
 
 
 class FriendRequest(Base):

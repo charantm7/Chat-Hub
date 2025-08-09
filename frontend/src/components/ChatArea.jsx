@@ -26,6 +26,7 @@ function ChatArea({ user, onSelect }) {
     y: 0,
     msgId: null,
   });
+
   console.log(messages);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
@@ -61,6 +62,7 @@ function ChatArea({ user, onSelect }) {
         }
       }
     };
+
     init();
   }, []);
   useEffect(() => {

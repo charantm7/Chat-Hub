@@ -102,3 +102,20 @@ async def delete_message(message_id: UUID, db: Session = Depends(get_db), curren
     db.commit()
 
     return {'msg': 'Message deleted'}
+
+
+@chat.get('/unread/{chat_id}')
+async def get_unread_messages(chat_id: UUID, current_user: Users = Depends(user_service.get_current_user), db: Session = Depends(get_db)):
+
+    messages = db.query(Message).filter(
+        Message.chat_id == chat_id,
+        Message.sender_id != current_user.id,
+        Message.is_read == False
+
+    ).count()
+
+    if not messages:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='no unread messages')
+
+    return messages
