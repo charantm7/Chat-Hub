@@ -19,12 +19,13 @@ function Main({ selectedModal, onSelect }) {
   }
 
   const [form, setForm] = useState({
+    name: "",
     first_name: "",
     last_name: "",
     d_o_b: "",
     about: "",
   });
-
+  console.log(form);
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -36,10 +37,12 @@ function Main({ selectedModal, onSelect }) {
     const token = await GetValidAccessToken();
     e.preventDefault();
 
-    const updatedForm = {
-      ...currentUser,
-      ...form,
-    };
+    const updatedForm = Object.fromEntries(
+      Object.entries({
+        ...currentUser,
+        ...form,
+      }).map(([Key, value]) => [Key, value === "" ? null : value])
+    );
     try {
       const res = await fetch("http://127.0.0.1:8000/v1/auth/update/my/profile", {
         method: "PUT",
@@ -158,7 +161,13 @@ function Main({ selectedModal, onSelect }) {
             <form onSubmit={handleSubmit} className="h-[100%] p-[1rem] flex flex-col">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <p className="text-xl ml-35">{currentUser.name}</p>
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    className=" text-[18px] ml-35 pt-1 pb-1 pl-3  rounded-md bg-[#b7b7b7b3]"
+                    placeholder="name*"
+                  />
                 </div>
                 <p className="flex items-center gap-2">
                   {currentUser.email}

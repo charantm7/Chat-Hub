@@ -104,18 +104,20 @@ async def delete_message(message_id: UUID, db: Session = Depends(get_db), curren
     return {'msg': 'Message deleted'}
 
 
-@chat.get('/unread/{chat_id}')
-async def get_unread_messages(chat_id: UUID, current_user: Users = Depends(user_service.get_current_user), db: Session = Depends(get_db)):
+@chat.post('/markread/{chat_id}')
+async def mark_read_messages(chat_id: UUID, current_user: Users = Depends(user_service.get_current_user), db: Session = Depends(get_db)):
 
-    messages = db.query(Message).filter(
+    message = db.query(Message).filter(
         Message.chat_id == chat_id,
         Message.sender_id != current_user.id,
         Message.is_read == False
 
-    ).count()
+    ).update({"is_read": True})
 
-    if not messages:
+    if not message:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='no unread messages')
 
-    return messages
+    db.commit()
+
+    return {'msg': 'marked as read'}

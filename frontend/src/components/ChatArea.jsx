@@ -97,6 +97,26 @@ function ChatArea({ user, onSelect }) {
 
   useEffect(() => {
     if (!token || !user?.chat_id) return;
+    async function markread() {
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/v1/chat/markread/${user.chat_id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) throw new Error("Request failed");
+      } catch (err) {
+        console.log(err);
+      }
+    }
+    markread();
+  }, [token, user?.chat_id]);
+
+  useEffect(() => {
+    if (!token || !user?.chat_id) return;
 
     socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${user.chat_id}?token=${token}`);
 
