@@ -27,6 +27,15 @@ const ChatList = ({ onSelect, selectedUser }) => {
   const [filter, setFilter] = useState("all");
   const [users, setUsers] = useState([]);
   const [request, setRequest] = useState({});
+  const [search, setSearch] = useState("");
+
+  const truncated = (message) => {
+    if (message.length > 27) {
+      return message.slice(0, 27) + "...";
+    }
+
+    return message;
+  };
 
   function formatLastMessageTime(timestamp) {
     const date = new Date(timestamp);
@@ -97,10 +106,10 @@ const ChatList = ({ onSelect, selectedUser }) => {
   };
 
   const filterFriends = friends.filter((friend) => {
-    if (filter === "unread") {
-      return friend.id > 2;
-    }
-    return true;
+    const matchfilter = filter === "unread" ? friend.unread > 0 : true;
+    const matchsearch = friend.name.toLowerCase().includes(search.toLowerCase());
+
+    return matchfilter && matchsearch;
   });
 
   useEffect(() => {
@@ -120,31 +129,13 @@ const ChatList = ({ onSelect, selectedUser }) => {
     loadUser();
   }, []);
 
-  const get_unread = async () => {
-    const token = await GetValidAccessToken();
-    try {
-      const res = await fetch(`http://127.0.0.1:8000/v1/chat/unread/${friends.chat_id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("request failed");
-      const data = await res.json();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   return (
     <div className="flex text-[#e8e8e8e0] flex-col w-[25%] border-r-1 border-[var(--border)]  ">
       <div className="flex flex-col w-[100%] gap-3 p-[1rem]">
         <input
-          type="search"
-          name="search"
-          id="search"
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search"
           className="bg-[#15191fd1] border-1 outline-0 h-[2.5rem] rounded-[20px] border-[var(--border)] text-md pl-4 pr-2"
         />
@@ -214,7 +205,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
               />
               <div className="flex flex-col w-[100%] ml-1 gap-1">
                 <p>{friend.name}</p>
-                <small className="opacity-70">{friend.last_message}</small>
+                <small className="opacity-70">{truncated(friend.last_message)}</small>
               </div>
               <div className="flex flex-col  gap-1 items-end">
                 <p className="text-[13px] inline-block text-nowrap">

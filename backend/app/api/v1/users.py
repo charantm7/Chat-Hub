@@ -118,11 +118,7 @@ async def get_users(db: Session = Depends(get_db), current_user: Users = Depends
 
 @router.put("/update/my/profile")
 async def update_my_profile(user_info: UpdateProfile, db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
-
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Not authenticated")
-
+    print(user_info)
     user_query = db.query(Users).filter(Users.id == current_user.id)
 
     user = user_query.first()
