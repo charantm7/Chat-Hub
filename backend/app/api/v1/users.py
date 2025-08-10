@@ -12,6 +12,7 @@ from app.core.psql_connection import get_db
 from app.models.user_model import Users, FriendRequest, RequestStatus
 from app.services import user_service
 from app.schemas.user_schema import RefreshToken, UpdateProfile
+from main import get_current_user, get_redis_client
 
 router = APIRouter()
 
@@ -23,7 +24,7 @@ async def login_with_google(request: Request):
 
 
 @router.get('/google/callback')
-async def google_callback(request: Request, db: Session = Depends(get_db)):
+async def google_callback(request: Request, db: Session = Depends(get_db), client=Depends(get_redis_client)):
 
     try:
         token = await security.oauth.google.authorize_access_token(request)
@@ -73,6 +74,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
     jwt_token = await security.create_access_token({"email": email})
     refresh_token = await security.create_refresh_token({"email": email})
+
     print('refresh')
     frontend_url = f"http://localhost:5173/auth/callback?token={jwt_token}&refresh={refresh_token}"
 
