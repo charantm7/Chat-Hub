@@ -9,7 +9,7 @@ from app.api import api_router
 from app.core.config import settings
 from app.services.user_service import get_current_user
 from app.models.user_model import Users
-from app.core.redis_script import redis_shutdown, redis_startup
+from app.core.redis_script import redis_manager
 
 
 @asynccontextmanager
@@ -44,12 +44,14 @@ app.add_middleware(
 
 @app.on_event('startup')
 async def startup_event():
-    await redis_startup()
+    await redis_manager.connect()
+    print("Redis connected")
 
 
 @app.on_event('shutdown')
 async def shutdown_event():
-    await redis_shutdown()
+    await redis_manager.disconnect()
+    print("Redis connection closed")
 
 
 app.include_router(api_router)
