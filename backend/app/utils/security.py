@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, status, Depends
 from authlib.integrations.starlette_client import OAuth
 
+
 from app.core.config import settings
 from app.schemas import user_schema
-from main import get_redis_client
+from app.core.redis_script import redis_manager
 
 
 ALGORITHM = settings.ALGORITHM
@@ -29,7 +30,8 @@ oauth.register(
 )
 
 
-async def create_access_token(data: dict, client=Depends(get_redis_client)) -> str:
+async def create_access_token(data: dict) -> str:
+    client = await redis_manager.get_client()
 
     if not data:
         raise HTTPException(
@@ -42,13 +44,14 @@ async def create_access_token(data: dict, client=Depends(get_redis_client)) -> s
 
     access_token = jwt.encode(to_endcode, SECRET_KEY, algorithm=ALGORITHM)
 
-    client.setex(f"access_session:{data.email}",
-                 ACCESS_TOKEN_EXPIRE_MINUTES*60, access_token)
+    await client.setex(f"access_session:{data['email']}",
+                       ACCESS_TOKEN_EXPIRE_MINUTES*60, access_token)
 
     return access_token
 
 
-async def create_refresh_token(data: dict, client=Depends(get_redis_client)) -> str:
+async def create_refresh_token(data: dict) -> str:
+    client = await redis_manager.get_client()
 
     if not data:
         raise HTTPException(
@@ -60,8 +63,8 @@ async def create_refresh_token(data: dict, client=Depends(get_redis_client)) -> 
 
     refresh_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-    client.setex(f"refresh_session:{data.email}",
-                 REFRESH_TOKEN_EXPIRE_DAYS*60*60*60, refresh_token)
+    await client.setex(f"refresh_session:{data['email']}",
+                       REFRESH_TOKEN_EXPIRE_DAYS*60*60*60, refresh_token)
 
     return refresh_token
 
@@ -97,7 +100,8 @@ async def validate_refresh_token(token):
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-async def validate_access_token(token, client=Depends(get_redis_client)):
+async def validate_access_token(token):
+    client = await redis_manager.get_client()
 
     credential_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -113,7 +117,7 @@ async def validate_access_token(token, client=Depends(get_redis_client)):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get('email')
 
-        cached_access_token = client.get(f"access_session:{email}")
+        cached_access_token = await client.get(f"access_session:{email}")
 
         if not cached_access_token or cached_access_token != token:
             raise HTTPException(

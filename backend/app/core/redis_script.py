@@ -1,20 +1,28 @@
 import asyncio
+import json
 from typing import Optional
 from uuid import UUID
-from redis.asyncio import Redis
-import aioredis
+import redis.asyncio as redis
 
 
 class RedisConnectionManager():
 
     def __init__(self):
-        self._redis = Optional[Redis] = None
+        self._redis = None
 
     async def connect(self, host="localhost", port=6379, db=0, decode_responses=True):
 
         if not self._redis:
-            self._redis = aioredis.from_url(
+            self._redis = await redis.from_url(
                 f"redis://{host}:{port}/{db}", decode_responses=decode_responses)
+            print("connected")
+
+            try:
+                await self._redis.ping()  # ✅ Test connection
+                print("✅ Redis connected")
+            except Exception as e:
+                print(f"❌ Failed to connect to Redis: {e}")
+                self._redis = None
 
         return self._redis
 
@@ -23,13 +31,10 @@ class RedisConnectionManager():
             await self._redis.close()
             self._redis = None
 
-    async def get_client(self) -> Redis:
+    async def get_client(self):
         if not self._redis:
             print("Redis is not connected.")
         return self._redis
-
-
-redis_manager = RedisConnectionManager()
 
 
 class RedisPubSubManager():
@@ -42,9 +47,14 @@ class RedisPubSubManager():
         asyncio.create_task(self.listen_pubsub_message())
 
     async def listen_pubsub_message(self):
+        from app.core.websocket import manager
 
-        # async for message in self.pubsub.listen():
-        pass
+        async for message in self.pubsub.listen():
+            if message["type"] == 'message':
+                data = json.loads(message["data"])
+                chat_id = data["chat_id"]
+                payload = data["payload"]
+                await manager._send_to_local(chat_id=chat_id, message=payload)
 
     async def subscribe(self, chat_id: UUID):
         self.pubsub.subscribe(chat_id)
@@ -58,3 +68,6 @@ class RedisPubSubManager():
 
     async def disconnect(self):
         await self.redis_connection.close()
+
+
+redis_manager = RedisConnectionManager()
