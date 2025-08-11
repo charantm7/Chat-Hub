@@ -16,8 +16,13 @@ from app.core.redis_script import redis_manager
 async def lifespan(app: FastAPI):
     """This handles the server starting and shutdown, loads before the app instance"""
     print('Server starting...')
-    yield
-    print('Server shutdown...')
+    await redis_manager.connect()
+    print("redis connected")
+
+    yield  # App runs here
+
+    # Shutdown
+    await redis_manager.disconnect()
 
 
 app = FastAPI(
@@ -25,8 +30,6 @@ app = FastAPI(
     version='1.0',
     lifespan=lifespan
 )
-
-redis_client = None
 
 app.add_middleware(
     SessionMiddleware,
@@ -42,18 +45,6 @@ app.add_middleware(
 )
 
 
-@app.on_event('startup')
-async def startup_event():
-    await redis_manager.connect()
-    print("Redis connected")
-
-
-@app.on_event('shutdown')
-async def shutdown_event():
-    await redis_manager.disconnect()
-    print("Redis connection closed")
-
-
 app.include_router(api_router)
 
 
@@ -66,7 +57,3 @@ async def favicon():
 @app.get('/')
 async def health(current_user: Users = Depends(get_current_user)):
     return current_user
-
-
-def get_redis_client():
-    return redis_client
