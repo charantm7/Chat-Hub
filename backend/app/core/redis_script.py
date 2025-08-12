@@ -15,13 +15,12 @@ class RedisConnectionManager():
         if not self._redis:
             self._redis = await redis.from_url(
                 f"redis://{host}:{port}/{db}", decode_responses=decode_responses)
-            print("connected")
 
             try:
-                await self._redis.ping()  # ✅ Test connection
-                print("✅ Redis connected")
+                await self._redis.ping()
+                print("Redis connected")
             except Exception as e:
-                print(f"❌ Failed to connect to Redis: {e}")
+                print(f"Failed to connect to Redis: {e}")
                 self._redis = None
 
         return self._redis
@@ -57,17 +56,18 @@ class RedisPubSubManager():
                 await manager._send_to_local(chat_id=chat_id, message=payload)
 
     async def subscribe(self, chat_id: UUID):
-        self.pubsub.subscribe(chat_id)
+        await self.pubsub.subscribe(str(chat_id))
         return self.pubsub
 
     async def unsubscribe(self, chat_id: UUID):
-        self.pubsub.unsubscribe(chat_id)
+        await self.pubsub.unsubscribe(str(chat_id))
 
     async def publish(self, chat_id: UUID, message: str):
-        self.redis_connection.publish(chat_id, message)
+        await self.redis_connection.publish(str(chat_id), message)
 
     async def disconnect(self):
         await self.redis_connection.close()
 
 
 redis_manager = RedisConnectionManager()
+pubsub_manager = RedisPubSubManager()
