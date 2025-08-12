@@ -9,7 +9,7 @@ from app.api import api_router
 from app.core.config import settings
 from app.services.user_service import get_current_user
 from app.models.user_model import Users
-from app.core.redis_script import redis_manager
+from app.core.redis_script import redis_manager, pubsub_manager
 
 
 @asynccontextmanager
@@ -17,12 +17,13 @@ async def lifespan(app: FastAPI):
     """This handles the server starting and shutdown, loads before the app instance"""
     print('Server starting...')
     await redis_manager.connect()
-    print("redis connected")
+    await pubsub_manager.connect()
 
     yield  # App runs here
 
     # Shutdown
     await redis_manager.disconnect()
+    await pubsub_manager.disconnect()
 
 
 app = FastAPI(

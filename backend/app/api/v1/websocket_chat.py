@@ -27,7 +27,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
         return
 
-    await manager.connect(chat_id=chat_id, websocket=websocket)
+    await manager.connect(chat_id=chat_id, websocket=websocket, user_id=member.user_id)
 
     try:
 
@@ -59,4 +59,5 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                 }
             )
     except WebSocketDisconnect:
-        manager.disconnect(chat_id, websocket)
+        manager.disconnect(
+            chat_id=chat_id, websocket=websocket, user_id=member.user_id)
