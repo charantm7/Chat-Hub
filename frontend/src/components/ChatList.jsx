@@ -30,6 +30,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
   const [search, setSearch] = useState("");
 
   const truncated = (message) => {
+    if (!message) return;
     if (message.length > 27) {
       return message.slice(0, 27) + "...";
     }
@@ -205,7 +206,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
               />
               <div className="flex flex-col w-[100%] ml-1 gap-1">
                 <p>{friend.name}</p>
-                <small className="opacity-70">{truncated(friend.last_message)}</small>
+                <small className="opacity-70">{truncated(friend?.last_message)}</small>
               </div>
               <div className="flex flex-col  gap-1 items-end">
                 <p className="text-[13px] inline-block text-nowrap">

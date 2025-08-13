@@ -3,15 +3,144 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Chat-Hub - Connect Smarter</title>
+    <style>
+      :root {
+        --bg-color: #0f172a;
+        --text-color: #f1f5f9;
+        --accent-color: #38bdf8;
+        --secondary-color: #1e293b;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        background-color: var(--secondary-color);
+      }
+
+      header h1 {
+        color: var(--accent-color);
+        font-size: 1.5rem;
+      }
+
+      nav a {
+        margin-left: 1.5rem;
+        text-decoration: none;
+        color: var(--text-color);
+        transition: color 0.3s ease;
+      }
+
+      nav a:hover {
+        color: var(--accent-color);
+      }
+
+      .hero {
+        text-align: center;
+        padding: 4rem 2rem;
+      }
+
+      .hero h2 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .hero p {
+        max-width: 600px;
+        margin: 0 auto 2rem;
+        font-size: 1.1rem;
+        color: #94a3b8;
+      }
+
+      .btn {
+        background-color: var(--accent-color);
+        color: var(--bg-color);
+        padding: 0.8rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        text-decoration: none;
+        transition: background 0.3s ease;
+      }
+
+      .btn:hover {
+        background-color: #0ea5e9;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        padding: 2rem;
+      }
+
+      .feature-card {
+        background-color: var(--secondary-color);
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .feature-card h3 {
+        color: var(--accent-color);
+        margin-bottom: 0.5rem;
+      }
+
+      footer {
+        text-align: center;
+        padding: 1rem;
+        background-color: var(--secondary-color);
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+    </style>
   </head>
   <body>
-    <nav>
-      <div>
-        <a href="#">Home </a>
-        <a href="#">About</a>
-        <a href="#">Service</a>
+    <header>
+      <h1>Chat-Hub</h1>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+        <a href="#login">Login</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h2>Connect, Chat, Collaborate</h2>
+      <p>
+        Chat-Hub is your all-in-one communication platform with real-time messaging, file sharing, and
+        AI-powered features.
+      </p>
+      <a href="#signup" class="btn">Get Started</a>
+    </section>
+
+    <section id="features" class="features">
+      <div class="feature-card">
+        <h3>Real-Time Chat</h3>
+        <p>Instant messaging with friends, teams, and communities.</p>
       </div>
-    </nav>
+      <div class="feature-card">
+        <h3>File Sharing</h3>
+        <p>Share documents, images, and videos securely.</p>
+      </div>
+      <div class="feature-card">
+        <h3>AI Tools</h3>
+        <p>Summarization, fact-checking, and fake news detection built-in.</p>
+      </div>
+    </section>
+
+    <footer>© 2025 Chat-Hub. All rights reserved.</footer>
   </body>
 </html>
