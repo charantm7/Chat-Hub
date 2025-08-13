@@ -1,6 +1,6 @@
 
 from datetime import datetime, tzinfo, timezone
-
+import pytz
 from fastapi import HTTPException, status
 
 from fastapi.encoders import jsonable_encoder
@@ -289,7 +289,7 @@ async def get_messages(db, chat_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
 
-    ist = timezone("Asia/Kolkata")  # if you want IST time
+    ist = pytz.timezone("Asia/Kolkata")  # if you want IST time
     formatted_messages = [
         {
             "id": m.id,
@@ -308,3 +308,26 @@ async def get_messages(db, chat_id):
         "messages": formatted_messages,
 
     }
+
+
+async def update_read_receipt(db, message_id, status):
+
+    message = db.query(Message).filter(Message.id == message_id).one_or_none()
+
+    if not message:
+        raise HTTPException(
+            status_code=404, detail="message not found to update read receipt")
+    message.status = status
+    db.commit()
+    return 'Updated'
+
+
+async def find_user_through_message(db, message_id):
+
+    user = db.query(Message).filter(Message.id == message_id).one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=404, detail="user not found with message id")
+
+    return user.sender_id

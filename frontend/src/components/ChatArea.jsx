@@ -26,6 +26,7 @@ function ChatArea({ user, onSelect }) {
     y: 0,
     msgId: null,
   });
+  const [messageRead, setMessageRead] = useState({});
 
   console.log(messages);
   const chatMessages = messages[user?.chat_id] || [];
@@ -126,6 +127,10 @@ function ChatArea({ user, onSelect }) {
       const msg = JSON.parse(event.data);
       console.log("Received:", msg);
 
+      if (msg.type === "message_read") {
+        setMessageRead((prev) => ({ ...prev, msg }));
+      }
+
       if (msg.Message) return;
 
       setMessages((prev) => {
@@ -144,7 +149,7 @@ function ChatArea({ user, onSelect }) {
           (m) =>
             m.sender_id === incomingMsg.sender_id &&
             m.content === incomingMsg.content &&
-            m.id.startsWith("temp-")
+            m.id?.startsWith("temp-")
         );
 
         let updated;
@@ -187,11 +192,35 @@ function ChatArea({ user, onSelect }) {
     });
 
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ data: input }));
+      console.log("sending");
+      socketRef.current.send(
+        JSON.stringify({
+          data: input,
+          type: "message",
+        })
+      );
+      console.log("sending");
     }
 
     setInput("");
   };
+  const sendReadReceipt = (messages) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({
+          type: "read_receipt",
+          message_id: messages,
+        })
+      );
+    }
+  };
+
+  useEffect(() => {
+    const chatMessages = messages[user?.chat_id] || [];
+    chatMessages
+      .filter((m) => m.sender_id !== currentUserID?.id && m.status !== "read")
+      .forEach((m) => sendReadReceipt(m.id));
+  }, [messages, user?.chat_id]);
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -246,7 +275,12 @@ function ChatArea({ user, onSelect }) {
               }}
             >
               {msg.content}
-              <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">{msg.sent_time}</span>
+              <span className="absolute bottom-1 right-6 text-[9px] text-gray-300">{msg.sent_time}</span>
+              {messageRead?.message_id === msg.id && messageRead?.type === "message_read" ? (
+                <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">read</span>
+              ) : (
+                <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">sent</span>
+              )}
             </p>
           </div>
         ))}
