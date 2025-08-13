@@ -1,5 +1,6 @@
 
-from pytz import timezone
+from datetime import datetime, tzinfo, timezone
+
 from fastapi import HTTPException, status
 
 from fastapi.encoders import jsonable_encoder
@@ -223,10 +224,13 @@ async def get_accepted_friends(db, current_user):
         })
 
         friends.sort(
-            key=lambda f: f["last_message_time"] or "1970-01-01",
+            key=lambda f: (
+                f["last_message_time"].replace(tzinfo=timezone.utc) if isinstance(f["last_message_time"], datetime) and f["last_message_time"].tzinfo is None
+                else f["last_message_time"] or datetime(1970, 1, 1, tzinfo=timezone.utc)
+            ),
             reverse=True
         )
-
+    print(friends)
     return friends
 
 
