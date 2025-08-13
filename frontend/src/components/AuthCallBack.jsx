@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 function AuthCallBack() {
   const navigate = useNavigate();
@@ -10,8 +11,10 @@ function AuthCallBack() {
     const refresh = params.get("refresh");
 
     if (token && refresh) {
-      const accessExpiry = Date.now() + 60 * 60 * 1000;
-      const refreshExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+      const access_decode = jwtDecode(token);
+      const refresh_decode = jwtDecode(refresh);
+      const accessExpiry = new Date(access_decode.exp * 1000);
+      const refreshExpiry = new Date(refresh_decode.exp * 1000);
       localStorage.setItem("token", token);
       localStorage.setItem("refresh", refresh);
       localStorage.setItem("accessExpiry", accessExpiry);

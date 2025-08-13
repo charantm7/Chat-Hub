@@ -1,11 +1,13 @@
+import { jwtDecode } from "jwt-decode";
+
 export function isAccessTokenExpired() {
   const expiry = localStorage.getItem("accessExpiry");
-  return !expiry || Date.now() > parseInt(expiry);
+  return !expiry || Date.now() * 1000 > parseInt(expiry);
 }
 
 export function isRefreshTokenExpired() {
   const expiry = localStorage.getItem("refreshExpiry");
-  return !expiry || Date.now() > parseInt(expiry);
+  return !expiry || Date.now() * 1000 > parseInt(expiry);
 }
 
 export async function refreshAccessToken() {
@@ -22,11 +24,14 @@ export async function refreshAccessToken() {
     });
     if (!res.ok) throw new Error("Refresh Failed");
     const data = await res.json();
-    const accessExpiry = Date.now() + 60 * 60 * 1000;
+    if (data) {
+      const access_decode = jwtDecode(data.access_token);
 
-    localStorage.setItem("token", data.access_token);
-    localStorage.setItem("accessExpiry", accessExpiry);
-
+      const accessExpiry = access_decode.exp * 1000;
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("accessExpiry", accessExpiry);
+    }
+    console.log("refresh", data.access_token);
     return data.access_token;
   } catch (err) {
     console.error("Token refresh error:", err);
@@ -47,6 +52,7 @@ export async function GetValidAccessToken() {
   if (isAccessTokenExpired()) {
     return await refreshAccessToken();
   }
+  console.log("not expired");
   return localStorage.getItem("token");
 }
 

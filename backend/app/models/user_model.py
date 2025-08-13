@@ -13,6 +13,12 @@ class RequestStatus(str, enum.Enum):
     rejected = "rejected"
 
 
+class MessageStatus(str, enum.Enum):
+    sent = "sent"
+    received = "received"
+    read = "read"
+
+
 class Users(Base):
     __tablename__ = 'users'
 
@@ -61,7 +67,8 @@ class Message(Base):
     sent_at = Column(TIMESTAMP(timezone=True),
                      server_default=text('now()'), nullable=False)
     is_read = Column(Boolean, default=False)
-
+    status = Column(
+        Enum(MessageStatus, name="messagestatus"), default=MessageStatus.sent)
     sender = relationship('Users', back_populates='messages')
 
 
