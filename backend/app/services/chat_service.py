@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import aliased, Session
 
+from app.schemas.chat_schema import FriendRequestValidate
 from app.schemas.user_schema import User
 from app.core.redis_script import redis_manager
 from app.models.user_model import (
@@ -19,7 +20,7 @@ from app.models.user_model import (
 )
 
 
-async def send_friend_request(db: Session, data, current_user):
+async def send_friend_request(db: Session, data, current_user, backgroundTask):
 
     client = await redis_manager.get_client()
 
@@ -43,7 +44,7 @@ async def send_friend_request(db: Session, data, current_user):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="You can not send request to your self")
 
-    cached_existing_request = await client(f'friend_request:{target_user.id}-{current_user.id}')
+    cached_existing_request = await client.get(f'friend_request:{target_user.id}-{current_user.id}')
     if cached_existing_request:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Request already sent")
@@ -56,33 +57,52 @@ async def send_friend_request(db: Session, data, current_user):
             FriendRequest.status == RequestStatus.accepted
         )
     ).first()
-    await client.set(f'friend_request:{target_user.id}-{current_user.id}', json.dumps)
 
     if existing_request:
+
+        existing_request = FriendRequestValidate.model_validate(
+            existing_request)
+
+        await client.set(f'friend_request:{target_user.id}-{current_user.id}', json.dumps(existing_request.model_dump(mode='json')))
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Request already sent")
 
-    new_request = FriendRequest(
-        from_user_id=current_user.id, to_user_id=target_user.id)
-    db.add(new_request)
-    db.commit()
-    db.refresh(new_request)
+    request_data = {
+        'from_user_id': current_user.id,
+        'to_user_id': target_user.id,
+        'status': 'pending'
+    }
+
+    await client.set(f'friend_request:{target_user.id}-{current_user.id}', json.dumps(request_data))
+    print(datetime.now())
+    backgroundTask.add_task(save_friend_request_to_db,
+                            db, current_user.id, target_user.id)
+
+    # new_request = FriendRequest(
+    #     from_user_id=current_user.id, to_user_id=target_user.id)
+    # db.add(new_request)
+    # db.commit()
+    # db.refresh(new_request)
+
+    # request = FriendRequestValidate.model_validate(new_request)
+
+    # await client.set(f'friend_request:{target_user.id}-{current_user.id}', json.dumps(request.model_dump(mode='json')))
 
     return {
         "success": True,
-        "message": "Friend request sent successfully",
-        "data": {
-            "request_id": new_request.id,
-            "status": new_request.status,
-            "to_user": {
-                "id": target_user.id,
-                "name": target_user.name,
-                "email": target_user.email,
-            },
-            "created_at": new_request.created_at.isoformat()
-        }
-
+        "message": "Friend request sent successfully"
     }
+
+
+def save_friend_request_to_db(db: Session, from_user: int, to_user: int):
+
+    new_request = FriendRequest(
+        from_user_id=from_user, to_user_id=to_user)
+    db.add(new_request)
+    db.commit()
+    db.refresh(new_request)
+    print(datetime.now())
 
 
 async def incomming_friend_request(db, current_user):

@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import Body, APIRouter, Depends, HTTPException, status
+from fastapi import Body, APIRouter, Depends, HTTPException, status, BackgroundTasks
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -26,10 +26,11 @@ chat = APIRouter()
 @chat.post('/invite/friend')
 async def send_request(
     data: FriendRequestSchema,
+    backgroundTask: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    return await send_friend_request(db=db, current_user=current_user, data=data)
+    return await send_friend_request(db=db, current_user=current_user, data=data, backgroundTask=backgroundTask)
 
 
 @chat.get('/friend-requests')
