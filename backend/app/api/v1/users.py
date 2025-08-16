@@ -74,8 +74,6 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
     jwt_token = await security.create_access_token({"email": email})
     refresh_token = await security.create_refresh_token({"email": email})
-
-    print('refresh')
     frontend_url = f"http://localhost:5173/auth/callback?token={jwt_token}&refresh={refresh_token}"
 
     return RedirectResponse(url=frontend_url)

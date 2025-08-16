@@ -1,12 +1,14 @@
-
+import json
 from datetime import datetime, tzinfo, timezone
 import pytz
 from fastapi import HTTPException, status
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import desc, func, or_
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, Session
 
+from app.schemas.user_schema import User
+from app.core.redis_script import redis_manager
 from app.models.user_model import (
     Users,
     FriendRequest,
@@ -17,19 +19,34 @@ from app.models.user_model import (
 )
 
 
-async def send_friend_request(
-        db, data, current_user
-):
+async def send_friend_request(db: Session, data, current_user):
 
-    target_user = db.query(Users).filter(Users.email == data.email).first()
+    client = await redis_manager.get_client()
 
-    if not target_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    target_user = await client.get(f'user:{data.email}')
+    if target_user:
+        target_user = json.loads(target_user)
+        target_user = User(**target_user)
+    else:
+        result = db.query(Users).filter(Users.email == data.email)
+        target_user = result.one_or_none()
+
+        if not target_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        user_data = User.model_validate(target_user)
+
+        await client.set(f"user:{data.email}", json.dumps(user_data.model_dump(mode='json')))
 
     if target_user.id == current_user.id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="You can not send request to your self")
+
+    cached_existing_request = await client(f'friend_request:{target_user.id}-{current_user.id}')
+    if cached_existing_request:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Request already sent")
 
     existing_request = db.query(FriendRequest).filter(
         FriendRequest.from_user_id == current_user.id,
@@ -39,6 +56,7 @@ async def send_friend_request(
             FriendRequest.status == RequestStatus.accepted
         )
     ).first()
+    await client.set(f'friend_request:{target_user.id}-{current_user.id}', json.dumps)
 
     if existing_request:
         raise HTTPException(

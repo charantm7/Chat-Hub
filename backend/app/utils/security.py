@@ -46,7 +46,7 @@ async def create_access_token(data: dict) -> str:
 
     await client.setex(f"access_session:{data['email']}",
                        ACCESS_TOKEN_EXPIRE_MINUTES*60, access_token)
-
+    print(access_token)
     return access_token
 
 

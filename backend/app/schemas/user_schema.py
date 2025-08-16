@@ -1,6 +1,21 @@
 from datetime import date
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, validator, ConfigDict
+
+
+class User(BaseModel):
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: Optional[int] = None
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    about: Optional[str] = None
+    picture: Optional[str] = None
+    is_verified: Optional[bool] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    date_of_birth: Optional[date] = None
 
 
 class TokenData(BaseModel):
