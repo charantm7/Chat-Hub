@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 import {
   faMagnifyingGlass,
   faEllipsisVertical,
@@ -8,6 +9,8 @@ import {
   faPaperclip,
   faMicrophone,
   faPenToSquare,
+  faCheck,
+  faCheckDouble,
 } from "@fortawesome/free-solid-svg-icons";
 import { GetValidAccessToken } from "./index";
 import profileBg from "../assets/profile.jpg";
@@ -21,6 +24,7 @@ function ChatArea({ user, onSelect }) {
   const [showModal, setShowModal] = useState(null);
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const [typingUser, setTypingUser] = useState([]);
   const [contextMenu, setContextMenu] = useState({
     x: 0,
     y: 0,
@@ -127,44 +131,57 @@ function ChatArea({ user, onSelect }) {
       const msg = JSON.parse(event.data);
       console.log("Received:", msg);
 
-      if (msg.type === "message_read") {
-        setMessageRead((prev) => ({ ...prev, msg }));
+      switch (msg.type) {
+        case "typing":
+          if (msg.sender_id !== currentUserID) {
+            if (msg.isTyping) {
+              setTypingUser((prev) => [...prev.filter((u) => u !== msg.sender_id)], msg.sender_id);
+            } else {
+              setTypingUser((prev) => prev.filter((u) => u != msg.sender_id));
+            }
+          }
+          break;
+
+        case "message_read":
+          setMessageRead((prev) => ({ ...prev, msg }));
+          break;
+
+        default:
+          if (msg.Message) return;
+
+          setMessages((prev) => {
+            const chatId = user?.chat_id;
+            if (!chatId) return prev;
+
+            const previous = prev[chatId] || [];
+
+            const incomingMsg = {
+              ...msg,
+              sent_at: msg.sent_at || msg.timestamp,
+              content: msg.content || msg.message,
+            };
+
+            const existingIndex = previous.findIndex(
+              (m) =>
+                m.sender_id === incomingMsg.sender_id &&
+                m.content === incomingMsg.content &&
+                m.id?.startsWith("temp-")
+            );
+
+            let updated;
+            if (existingIndex !== -1) {
+              updated = [...previous];
+              updated[existingIndex] = incomingMsg;
+            } else if (!previous.some((m) => m.id === incomingMsg.id)) {
+              updated = [...previous, incomingMsg];
+            } else {
+              updated = previous;
+            }
+
+            updated.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+            return { ...prev, [chatId]: updated };
+          });
       }
-
-      if (msg.Message) return;
-
-      setMessages((prev) => {
-        const chatId = user?.chat_id;
-        if (!chatId) return prev;
-
-        const previous = prev[chatId] || [];
-
-        const incomingMsg = {
-          ...msg,
-          sent_at: msg.sent_at || msg.timestamp,
-          content: msg.content || msg.message,
-        };
-
-        const existingIndex = previous.findIndex(
-          (m) =>
-            m.sender_id === incomingMsg.sender_id &&
-            m.content === incomingMsg.content &&
-            m.id?.startsWith("temp-")
-        );
-
-        let updated;
-        if (existingIndex !== -1) {
-          updated = [...previous];
-          updated[existingIndex] = incomingMsg;
-        } else if (!previous.some((m) => m.id === incomingMsg.id)) {
-          updated = [...previous, incomingMsg];
-        } else {
-          updated = previous;
-        }
-
-        updated.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-        return { ...prev, [chatId]: updated };
-      });
     };
 
     socketRef.current.onclose = () => console.log("WebSocket closed");
@@ -204,16 +221,27 @@ function ChatArea({ user, onSelect }) {
 
     setInput("");
   };
-  const sendReadReceipt = (messages) => {
+  const getUnreadMessageIds = () => {
+    return Object.values(messages) // convert object → array
+      .filter((msg) => !msg.read) // keep only unread
+      .map((msg) => msg.id); // get IDs
+  };
+  const sendReadReceipt = () => {
+    const unreadIds = getUnreadMessageIds();
+
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(
         JSON.stringify({
-          type: "read_receipt",
-          message_id: messages,
+          type: "message_read",
+          data: unreadIds,
         })
       );
     }
   };
+  useEffect(() => {
+    // when user opens the chat
+    sendReadReceipt();
+  }, []);
 
   useEffect(() => {
     const chatMessages = messages[user?.chat_id] || [];
@@ -266,7 +294,7 @@ function ChatArea({ user, onSelect }) {
             className={`p-3 ${msg.sender_id === currentUserID?.id ? "text-right" : "text-left"}`}
           >
             <p
-              className={`relative inline-block min-w-[8%] max-w-[70%] ${
+              className={`relative inline-block min-w-[12%] max-w-[70%] ${
                 msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
               } text-white pr-4 pl-4 pt-2 pb-[22px] rounded-[7px] break-words`}
               onContextMenu={(e) => {
@@ -275,11 +303,19 @@ function ChatArea({ user, onSelect }) {
               }}
             >
               {msg.content}
-              <span className="absolute bottom-1 right-6 text-[9px] text-gray-300">{msg.sent_time}</span>
-              {messageRead?.message_id === msg.id && messageRead?.type === "message_read" ? (
-                <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">read</span>
-              ) : (
-                <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">sent</span>
+              <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
+              {msg.senderId === currentUserID && (
+                <>
+                  {readReceipts[msg.id] ? (
+                    <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
+                      <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
+                    </span>
+                  ) : (
+                    <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
+                      <FontAwesomeIcon icon={faCheck} className="text-[12px]" />
+                    </span>
+                  )}
+                </>
               )}
             </p>
           </div>

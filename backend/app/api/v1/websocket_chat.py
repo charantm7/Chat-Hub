@@ -37,49 +37,47 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
             data = await websocket.receive_json()
             print("Received from client:", data)
             content = data.get('data')
-            data_type = data.get('type')
+            message_type = data.get('type')
+            print(content)
 
-            if data_type == 'read_receipt':
+            if message_type == 'message_read':
 
-                message_id = data.get('message_id')
-                if not message_id:
-                    await websocket.send_json({
-                        "type": "error",
+                # msg = db.query(Message).filter(
+                #     Message.id == content).one_or_none()
+                # if msg:
+                #     msg(is_read=True)
+                #     db.commit()
 
-                    })
-                    continue
+                await manager.broadcast(
+                    chat_id,
+                    {"type": 'message_read',
+                        'id': content, }
+                )
 
-                await update_read_receipt(db=db, message_id=message_id, status=MessageStatus.read)
+            else:
 
-                sender_id = await find_user_through_message(db=db, message_id=message_id)
+                new_message = Message(
+                    chat_id=chat_id,
+                    sender_id=current_user.id,
+                    content=content
+                )
 
-                await manager.broadcast(chat_id, {
-                    'type': "message_read",
-                    'message_id': message_id,
-                    'sender_id': sender_id
-                })
+                db.add(new_message)
+                db.commit()
+                db.refresh(new_message)
 
-            new_message = Message(
-                chat_id=chat_id,
-                sender_id=current_user.id,
-                content=content
-            )
-
-            db.add(new_message)
-            db.commit()
-            db.refresh(new_message)
-
-            await manager.broadcast(
-                chat_id,
-                {
-                    "id": str(new_message.id),
-                    "sender_id": current_user.id,
-                    "sender": current_user.name,
-                    "content": content,
-                    "sent_at": new_message.sent_at.strftime("%I:%M %p"),
-                    "sent_time": new_message.sent_at.strftime("%I:%M %p")
-                }
-            )
+                await manager.broadcast(
+                    chat_id,
+                    {"type": message_type,
+                        "id": str(new_message.id),
+                        "sender_id": current_user.id,
+                        "sender": current_user.name,
+                        "content": content,
+                        "sent_at": new_message.sent_at.strftime("%I:%M %p"),
+                        "sent_time": new_message.sent_at.strftime("%I:%M %p"),
+                        "is_read": new_message.is_read
+                     }
+                )
     except WebSocketDisconnect:
         await manager.disconnect(
             chat_id=chat_id, websocket=websocket, user_id=member.user_id)
