@@ -30,9 +30,7 @@ function ChatArea({ user, onSelect }) {
     y: 0,
     msgId: null,
   });
-  const [messageRead, setMessageRead] = useState({});
-
-  console.log(messages);
+  console.log(messages[user?.chat_id]);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -143,7 +141,16 @@ function ChatArea({ user, onSelect }) {
           break;
 
         case "message_read":
-          setMessageRead((prev) => ({ ...prev, msg }));
+          setMessages((prev) => {
+            const updated = { ...prev };
+            const chatId = user?.chat_id;
+            if (!chatId || !updated[chatId]) return prev;
+
+            const ids = msg.message_ids || [];
+            updated[chatId] = updated[chatId].map((m) => (ids.includes(m.id) ? { ...m, read: true } : m));
+
+            return updated;
+          });
           break;
 
         default:
@@ -221,27 +228,34 @@ function ChatArea({ user, onSelect }) {
 
     setInput("");
   };
-  const getUnreadMessageIds = () => {
-    return Object.values(messages) // convert object → array
-      .filter((msg) => !msg.read) // keep only unread
-      .map((msg) => msg.id); // get IDs
-  };
-  const sendReadReceipt = () => {
-    const unreadIds = getUnreadMessageIds();
 
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
+  const getUnreadMessage = () => {
+    const chatId = user?.chat_id;
+    if (!chatId || !messages[chatId]) return [];
+
+    return messages[chatId]
+      .filter((msg) => msg.sender_id !== currentUserID?.id && !msg.read) // only messages from others
+      .map((msg) => msg.id);
+  };
+
+  const sendReadReceipt = () => {
+    const unreadIds = getUnreadMessage();
+
+    if (unreadIds.length > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(
         JSON.stringify({
           type: "message_read",
-          data: unreadIds,
+          message_ids: unreadIds,
+          chat_id: user?.chat_id,
         })
       );
     }
   };
   useEffect(() => {
-    // when user opens the chat
-    sendReadReceipt();
-  }, []);
+    if (user?.chat_id) {
+      sendReadReceipt();
+    }
+  }, [messages, user?.chat_id]);
 
   useEffect(() => {
     const chatMessages = messages[user?.chat_id] || [];
@@ -304,9 +318,9 @@ function ChatArea({ user, onSelect }) {
             >
               {msg.content}
               <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
-              {msg.senderId === currentUserID && (
+              {msg.sender_id === currentUserID?.id && (
                 <>
-                  {readReceipts[msg.id] ? (
+                  {msg.read ? (
                     <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
                       <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
                     </span>

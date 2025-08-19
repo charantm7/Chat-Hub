@@ -35,23 +35,29 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
         while True:
 
             data = await websocket.receive_json()
-            print("Received from client:", data)
+
             content = data.get('data')
             message_type = data.get('type')
-            print(content)
 
             if message_type == 'message_read':
 
-                # msg = db.query(Message).filter(
-                #     Message.id == content).one_or_none()
-                # if msg:
-                #     msg(is_read=True)
-                #     db.commit()
+                message_ids = data.get('message_ids')
+                chat_ids = data.get('chat_id')
+
+                if message_ids and isinstance(message_ids, list):
+                    print('db- entering')
+                    db.query(Message).filter(
+                        Message.id.in_(message_ids),
+                        Message.chat_id == chat_id
+                    ).update({Message.is_read: True}, synchronize_session=False)
+
+                    db.commit()
 
                 await manager.broadcast(
                     chat_id,
                     {"type": 'message_read',
-                        'id': content, }
+                     'chat_id': chat_ids,
+                     'message_ids': message_ids}
                 )
 
             else:
