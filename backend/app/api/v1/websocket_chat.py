@@ -46,10 +46,12 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
                 if message_ids and isinstance(message_ids, list):
                     print('db- entering')
+
                     db.query(Message).filter(
-                        Message.id.in_(message_ids),
+                        Message.is_read == False,
                         Message.chat_id == chat_id
                     ).update({Message.is_read: True}, synchronize_session=False)
+                    print('entered')
 
                     db.commit()
 

@@ -335,7 +335,8 @@ async def get_messages(db, chat_id):
             "sender_id": m.sender_id,
             "content": m.content,
             "sent_at": m.sent_at.isoformat(),
-            "sent_time": m.sent_at.astimezone(ist).strftime("%I:%M %p")
+            "sent_time": m.sent_at.astimezone(ist).strftime("%I:%M %p"),
+            "is_read": m.is_read
 
         }
         for m in messages

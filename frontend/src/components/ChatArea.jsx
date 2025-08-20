@@ -320,9 +320,10 @@ function ChatArea({ user, onSelect }) {
               <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
               {msg.sender_id === currentUserID?.id && (
                 <>
-                  {msg.read ? (
+                  {msg.read || msg.is_read ? (
                     <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
                       <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
+                      {console.log("read", msg.is_read)}
                     </span>
                   ) : (
                     <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">

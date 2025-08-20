@@ -3,151 +3,97 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat-Hub - Connect Smarter</title>
-    <style>
-      :root {
-        --bg-color: #0f172a;
-        --text-color: #f1f5f9;
-        --accent-color: #38bdf8;
-        --secondary-color: #1e293b;
-      }
-
-      body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-color);
-      }
-
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 2rem;
-        background-color: var(--secondary-color);
-      }
-
-      header h1 {
-        color: var(--accent-color);
-        font-size: 1.5rem;
-      }
-
-      nav a {
-        margin-left: 1.5rem;
-        text-decoration: none;
-        color: var(--text-color);
-        transition: color 0.3s ease;
-      }
-
-      nav a:hover {
-        color: var(--accent-color);
-      }
-
-      .hero {
-        text-align: center;
-        padding: 4rem 2rem;
-      }
-
-      .hero h2 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-      }
-
-      .hero p {
-        max-width: 600px;
-        margin: 0 auto 2rem;
-        font-size: 1.1rem;
-        color: #94a3b8;
-      }
-
-      .btn {
-        background-color: var(--accent-color);
-        color: var(--bg-color);
-        padding: 0.8rem 1.5rem;
-        border-radius: 0.5rem;
-        font-weight: bold;
-        text-decoration: none;
-        transition: background 0.3s ease;
-      }
-
-      .btn:hover {
-        background-color: #0ea5e9;
-      }
-
-      .features {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        padding: 2rem;
-      }
-
-      .feature-card {
-        background-color: var(--secondary-color);
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        text-align: center;
-        transition: transform 0.3s ease;
-      }
-
-      .feature-card:hover {
-        transform: translateY(-5px);
-      }
-
-      .feature-card h3 {
-        color: var(--accent-color);
-        margin-bottom: 0.5rem;
-      }
-
-      footer {
-        text-align: center;
-        padding: 1rem;
-        background-color: var(--secondary-color);
-        font-size: 0.9rem;
-        color: #94a3b8;
-      }
-    </style>
+    <title>Title</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header>
-      <h1>Chat-Hub</h1>
-      <nav>
-        <a href="#features">Features</a>
-        <a href="#about">About</a>
-        <a href="#login">Login</a>
-      </nav>
-    </header>
-    <marquee
-      behavior="scroll"
-      scrolldelay="50"
-      style="background-color: rgba(255, 255, 255, 0.247)"
-      direction="left"
+    <h1>Class Time Table</h1>
+    <table>
+      <tr style="background-color: rgb(34, 211, 129)">
+        <th>Time</th>
+        <th>Monday</th>
+        <th>Tuesday</th>
+        <th>Wednesday</th>
+        <th>Thursday</th>
+        <th>Friday</th>
+        <th>Saturday</th>
+      </tr>
+      <tr>
+        <td>8:45 - 9:45</td>
+        <td>AI</td>
+        <td>TOC</td>
+        <td>CN</td>
+        <td>RM</td>
+        <td>SEPM</td>
+        <td>CCA/ECA</td>
+      </tr>
+      <tr>
+        <td>9:45 - 10:45</td>
+        <td>RM</td>
+        <td>SEPM</td>
+        <td>AI</td>
+        <td>MP</td>
+        <td>TOC</td>
+        <td>CCA/ECA</td>
+      </tr>
+      <tr>
+        <td>10:45 - 11:00</td>
+        <td colspan="6">short break</td>
+      </tr>
+      <tr>
+        <td>11:00 - 12:00</td>
+        <td>PL</td>
+        <td>CN</td>
+        <td style="background-color: rgb(244, 161, 131)" rowspan="2">LAB</td>
+        <td>TOC</td>
+        <td>RM</td>
+        <td>CCA/ECA</td>
+      </tr>
+      <tr>
+        <td>12:00 - 1:00</td>
+        <td>TOC</td>
+        <td>AI</td>
+        <td>MP</td>
+        <td>CN</td>
+        <td>CCA/ECA</td>
+      </tr>
+      <tr>
+        <td>1:00 - 1:45</td>
+        <td colspan="6">Lunch break</td>
+      </tr>
+      <tr>
+        <td>1:45 - 2:45</td>
+        <td>LNG/BIM</td>
+        <td style="background-color: rgb(244, 161, 131)" rowspan="2">LAB</td>
+        <td>ESM</td>
+        <td>CN</td>
+        <td>SEPM</td>
+        <td>NSS/PT</td>
+      </tr>
+      <tr>
+        <td>2:45 - 3:45</td>
+        <td>SEPM</td>
+        <td>MP</td>
+        <td>AI</td>
+        <td>MP</td>
+        <td>NSS/PT</td>
+      </tr>
+    </table>
+    <div
+      class="footer"
+      style="
+        position: absolute;
+        bottom: 0.5rem;
+        border: 1px solid black;
+        width: 97%;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgb(34, 211, 129);
+      "
     >
-      <p style="color: white">Lorem ipsum dolor sit amet.</p></marquee
-    >
-    <section class="hero">
-      <h2>Connect, Chat, Collaborate</h2>
-      <p>
-        Chat-Hub is your all-in-one communication platform with real-time messaging, file sharing, and
-        AI-powered features.
-      </p>
-      <a href="#signup" class="btn">Get Started</a>
-    </section>
-
-    <section id="features" class="features">
-      <div class="feature-card">
-        <h3>Real-Time Chat</h3>
-        <p>Instant messaging with friends, teams, and communities.</p>
-      </div>
-      <div class="feature-card">
-        <h3>File Sharing</h3>
-        <p>Share documents, images, and videos securely.</p>
-      </div>
-      <div class="feature-card">
-        <h3>AI Tools</h3>
-        <p>Summarization, fact-checking, and fake news detection built-in.</p>
-      </div>
-    </section>
-
-    <footer>© 2025 Chat-Hub. All rights reserved.</footer>
+      © All rights are reserved, class time table
+    </div>
   </body>
 </html>
