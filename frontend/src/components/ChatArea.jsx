@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import {
@@ -16,6 +16,28 @@ import { GetValidAccessToken } from "./index";
 import profileBg from "../assets/profile.jpg";
 import { CheckCircle, BadgeCheck } from "lucide-react";
 
+const useDebounce = (callback, delay) => {
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (...args) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  };
+};
+
 function ChatArea({ user, onSelect }) {
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
@@ -25,12 +47,13 @@ function ChatArea({ user, onSelect }) {
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [typingUser, setTypingUser] = useState([]);
+  const [message, setMessage] = useState("");
   const [contextMenu, setContextMenu] = useState({
     x: 0,
     y: 0,
     msgId: null,
   });
-  console.log(messages[user?.chat_id]);
+  console.log("e message", message);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -131,9 +154,9 @@ function ChatArea({ user, onSelect }) {
 
       switch (msg.type) {
         case "typing":
-          if (msg.sender_id !== currentUserID) {
+          if (msg.sender_id !== currentUserID?.id) {
             if (msg.isTyping) {
-              setTypingUser((prev) => [...prev.filter((u) => u !== msg.sender_id)], msg.sender_id);
+              setTypingUser((prev) => [...prev.filter((u) => u !== msg.sender_id), msg.sender_id]);
             } else {
               setTypingUser((prev) => prev.filter((u) => u != msg.sender_id));
             }
@@ -192,7 +215,10 @@ function ChatArea({ user, onSelect }) {
     };
 
     socketRef.current.onclose = () => console.log("WebSocket closed");
-    return () => socketRef.current?.close();
+    return () => {
+      socketRef.current?.close();
+      setTypingUser([]);
+    };
   }, [token, user?.chat_id, currentUserID?.id]);
 
   const sendMessage = () => {
@@ -216,14 +242,19 @@ function ChatArea({ user, onSelect }) {
     });
 
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      console.log("sending");
       socketRef.current.send(
         JSON.stringify({
           data: input,
           type: "message",
         })
       );
-      console.log("sending");
+
+      socketRef.current.send(
+        JSON.stringify({
+          type: "typing",
+          isTyping: false,
+        })
+      );
     }
 
     setInput("");
@@ -271,6 +302,38 @@ function ChatArea({ user, onSelect }) {
     }
   };
 
+  const sendTypingIndicatorTrue = useDebounce(() => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({
+          type: "typing",
+          isTyping: true,
+          sender_id: currentUserID?.id,
+        })
+      );
+    }
+  });
+  const sendTypingIndicatorFalse = useDebounce(() => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({
+          type: "typing",
+          isTyping: false,
+          sender_id: currentUserID?.id,
+        })
+      );
+    }
+  }, 1500);
+
+  const handleMessageChange = useCallback(
+    (e) => {
+      setMessage(e.target.value);
+      sendTypingIndicatorTrue();
+      sendTypingIndicatorFalse();
+    },
+    [sendTypingIndicatorTrue, sendTypingIndicatorFalse]
+  );
+
   if (!user) {
     return (
       <div className="flex-1 flex items-center justify-center p-4 text-gray-400">
@@ -287,7 +350,11 @@ function ChatArea({ user, onSelect }) {
           <p onClick={() => setShowModal("account")} className="text-[15px] cursor-pointer">
             {user.name}
           </p>
-          <small className="text-[11px] opacity-70">last seen recently</small>
+          {typingUser.length > 0 ? (
+            <small className="text-[11px] opacity-70 text-green-400">typing...</small>
+          ) : (
+            <small className="text-[11px] opacity-70">last seen recently</small>
+          )}
         </div>
         <div className="flex gap-4 text-sm items-center">
           <FontAwesomeIcon icon={faMagnifyingGlass} className="cursor-pointer" />
@@ -343,7 +410,10 @@ function ChatArea({ user, onSelect }) {
         <FontAwesomeIcon icon={faFaceSmile} className="text-[20px]" />
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            setInput(e.target.value);
+            handleMessageChange(e);
+          }}
           onKeyDown={handleKeyPress}
           placeholder="Write a message..."
           className="w-full h-[4rem] outline-0 bg-transparent text-white"

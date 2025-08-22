@@ -60,6 +60,20 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                      'message_ids': message_ids}
                 )
 
+            elif message_type == 'typing':
+                print('got message typing')
+
+                sender_id = data.get('sender_id')
+                isTyping = data.get('isTyping')
+
+                await manager.broadcast(
+                    chat_id, {
+                        'type': 'typing',
+                        'sender_id': sender_id,
+                        'isTyping': isTyping
+                    }
+                )
+
             else:
 
                 new_message = Message(
