@@ -48,17 +48,20 @@ function ChatArea({ user, onSelect }) {
   const messagesEndRef = useRef(null);
   const [typingUser, setTypingUser] = useState([]);
   const [message, setMessage] = useState("");
+  const [file, setFile] = useState(null);
+  const fileInputRef = useRef(null);
   const [contextMenu, setContextMenu] = useState({
     x: 0,
     y: 0,
     msgId: null,
   });
-  console.log("e message", message);
+  console.log("files", file);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   function handleOverlayClick(e) {
     if (e.target.id === "overlay") {
+      resetFile();
       setShowModal(null);
     }
   }
@@ -231,7 +234,6 @@ function ChatArea({ user, onSelect }) {
       chat_id: user?.chat_id,
       sent_at: new Date().toISOString(),
     };
-    console.log(newMsg.sent_time);
 
     setMessages((prev) => {
       const previous = prev[user?.chat_id] || [];
@@ -334,6 +336,77 @@ function ChatArea({ user, onSelect }) {
     [sendTypingIndicatorTrue, sendTypingIndicatorFalse]
   );
 
+  const handleFileUpload = async () => {
+    if (!file) return alert("Please select a file");
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("sender_id", currentUserID?.id);
+    formData.append("chat_id", user?.chat_id);
+
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/v1/chat/file/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Upload failed");
+      }
+      setFile(null);
+      setShowModal(null);
+
+      const response = await res.json();
+
+      console.log(response);
+
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(
+          JSON.stringify({
+            type: "file",
+            sender_id: currentUserID?.id,
+            data: {
+              file_url: response.url,
+              file_name: response.file_name,
+              file_type: response.file_type,
+              unique_name: response.unique_name,
+            },
+          })
+        );
+      }
+
+      const newFileMessage = {
+        id: "temp-" + crypto.randomUUID(),
+        sender_id: currentUserID?.id,
+        file_name: response.file_name,
+        type: "file",
+        url: response.file_url,
+        file_type: response.file_type,
+        unique_name: response.unique_name,
+        chat_id: user?.chat_id,
+        sent_at: new Date().toISOString(),
+      };
+      setMessages((prev) => {
+        const previous = prev[user?.chat_id] || [];
+        return {
+          ...prev,
+          [user?.chat_id]: [...previous, newFileMessage],
+        };
+      });
+    } catch (e) {
+      console.log("upload error", e);
+      alert("upload failed");
+    }
+  };
+
+  const resetFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   if (!user) {
     return (
       <div className="flex-1 flex items-center justify-center p-4 text-gray-400">
@@ -374,32 +447,109 @@ function ChatArea({ user, onSelect }) {
             key={msg.id}
             className={`p-3 ${msg.sender_id === currentUserID?.id ? "text-right" : "text-left"}`}
           >
-            <p
-              className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
-              } text-white pr-4 pl-4 pt-2 pb-[22px] rounded-[7px] break-words`}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setContextMenu({ x: e.pageX, y: e.pageY, msgId: msg.id, senderId: msg.sender_id });
-              }}
-            >
-              {msg.content}
-              <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
-              {msg.sender_id === currentUserID?.id && (
-                <>
-                  {msg.read || msg.is_read ? (
-                    <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
-                      <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
-                      {console.log("read", msg.is_read)}
-                    </span>
-                  ) : (
-                    <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
-                      <FontAwesomeIcon icon={faCheck} className="text-[12px]" />
-                    </span>
+            {msg.file_url ? (
+              msg.file_type.startsWith("image/") ? (
+                <div
+                  className={`relative inline-block min-w-[12%] max-w-[70%] ${
+                    msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                  } text-white pr-2 pl-2 pt-2 pb-[22px] rounded-[7px] break-words`}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({
+                      x: e.pageX,
+                      y: e.pageY,
+                      msgId: msg.id,
+                      senderId: msg.sender_id,
+                    });
+                  }}
+                >
+                  <img src={msg.file_url} alt={msg.file_name} className="max-h-40 rounded-md border mb-2" />
+                  <p className="text-xs text-gray-200">{msg.file_name}</p>
+
+                  <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
+
+                  {msg.sender_id === currentUserID?.id && (
+                    <>
+                      {msg.read || msg.is_read ? (
+                        <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
+                          <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
+                        </span>
+                      ) : (
+                        <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
+                          <FontAwesomeIcon icon={faCheck} className="text-[12px]" />
+                        </span>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </p>
+                </div>
+              ) : (
+                <p
+                  className={`relative inline-block min-w-[12%] max-w-[70%] ${
+                    msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                  } text-white pr-4 pl-4 pt-[30px] pb-[22px] rounded-[7px] break-words`}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({
+                      x: e.pageX,
+                      y: e.pageY,
+                      msgId: msg.id,
+                      senderId: msg.sender_id,
+                    });
+                  }}
+                >
+                  <span className="absolute top-2 left-3 text-[12px] text-gray-300">{msg.file_type}</span>
+                  <a
+                    href={msg.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-blue-200"
+                  >
+                    📎 {msg.file_name}
+                  </a>
+                  <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
+                  {msg.sender_id === currentUserID?.id && (
+                    <>
+                      {msg.read || msg.is_read ? (
+                        <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
+                          <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
+                        </span>
+                      ) : (
+                        <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
+                          <FontAwesomeIcon icon={faCheck} className="text-[12px]" />
+                        </span>
+                      )}
+                    </>
+                  )}
+                </p>
+              )
+            ) : (
+              <p
+                className={`relative inline-block min-w-[12%] max-w-[70%] ${
+                  msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                } text-white pr-4 pl-4 pt-2 pb-[22px] rounded-[7px] break-words`}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({ x: e.pageX, y: e.pageY, msgId: msg.id, senderId: msg.sender_id });
+                }}
+              >
+                {msg.content}
+                <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
+                {msg.sender_id === currentUserID?.id && (
+                  <>
+                    {msg.read || msg.is_read ? (
+                      <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
+                        <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
+                        {console.log("read", msg.is_read)}
+                      </span>
+                    ) : (
+                      <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
+                        <FontAwesomeIcon icon={faCheck} className="text-[12px]" />
+                      </span>
+                    )}
+                  </>
+                )}
+              </p>
+            )}
           </div>
         ))}
         <div ref={messagesEndRef} />
@@ -418,7 +568,22 @@ function ChatArea({ user, onSelect }) {
           placeholder="Write a message..."
           className="w-full h-[4rem] outline-0 bg-transparent text-white"
         />
-        <FontAwesomeIcon icon={faPaperclip} className="text-[20px]" />
+        <label className="flex items-center cursor-pointer">
+          <FontAwesomeIcon icon={faPaperclip} className="text-[20px]" />
+          <input
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              const selectfile = e.target.files[0];
+              if (selectfile) {
+                setFile(selectfile);
+                setShowModal("file");
+              }
+              e.target.value = "";
+            }}
+          />
+        </label>
+
         <FontAwesomeIcon icon={faMicrophone} className="text-[20px]" />
       </div>
       {showModal == "account" && (
@@ -495,6 +660,44 @@ function ChatArea({ user, onSelect }) {
             Select
           </li>
         </ul>
+      )}
+      {showModal == "file" && (
+        <div
+          id="overlay"
+          onClick={handleOverlayClick}
+          className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
+        >
+          <div className="bg-[#ffffffd0] border border-black/10 p-3 rounded-2xl overflow-hidden">
+            {file && (
+              <div className="space-y-3">
+                <p className="text-sm">📄 {file.name}</p>
+
+                {/* Image preview if applicable */}
+                {file.type.startsWith("image/") && (
+                  <img src={URL.createObjectURL(file)} alt="preview" className="max-h-40 rounded-md border" />
+                )}
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    className="bg-red-500 text-white text-md cursor-pointer pl-2 pr-2 rounded-[4px] hover:bg-red-600"
+                    onClick={() => {
+                      setShowModal(null);
+                      resetFile();
+                    }}
+                  >
+                    cancel
+                  </button>
+                  <button
+                    className="bg-blue-500 text-white text-md pl-2 pr-2 cursor-pointer rounded-[4px] hover:bg-blue-600"
+                    onClick={handleFileUpload}
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

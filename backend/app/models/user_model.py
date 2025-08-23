@@ -63,12 +63,16 @@ class Message(Base):
     id = Column(UUID, primary_key=True, default=uuid4, unique=True)
     chat_id = Column(UUID, ForeignKey("chats.id"))
     sender_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
-    content = Column(Text)
+    content = Column(Text, nullable=True)
     sent_at = Column(TIMESTAMP(timezone=True),
                      server_default=text('now()'), nullable=False)
     is_read = Column(Boolean, default=False)
     status = Column(
         Enum(MessageStatus, name="messagestatus"), default=MessageStatus.sent)
+    file_name = Column(String, nullable=True)
+    unique_name = Column(String, nullable=True)
+    file_url = Column(String, nullable=True)
+    file_type = Column(String, nullable=True)
     sender = relationship('Users', back_populates='messages')
 
 

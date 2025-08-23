@@ -35,7 +35,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
       return message.slice(0, 27) + "...";
     }
 
-    return message;
+    return message + "...";
   };
 
   function formatLastMessageTime(timestamp) {

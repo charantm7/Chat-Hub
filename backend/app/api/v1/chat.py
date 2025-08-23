@@ -1,7 +1,10 @@
-from uuid import UUID
-from fastapi import Body, APIRouter, Depends, HTTPException, status, BackgroundTasks
+import mimetypes
+import os
+from uuid import UUID, uuid4
+from fastapi import Body, APIRouter, Depends, Form, HTTPException, UploadFile, File, status, BackgroundTasks, Request
 
-from sqlalchemy import desc
+from fastapi.responses import FileResponse
+from sqlalchemy import desc, exists
 from sqlalchemy.orm import Session
 
 from app.core.psql_connection import get_db
@@ -21,6 +24,9 @@ from backend.app.services import user_service
 
 
 chat = APIRouter()
+
+upload_dir = "uploads"
+os.makedirs(upload_dir, exist_ok=True)
 
 
 @chat.post('/invite/friend')
@@ -122,3 +128,60 @@ async def mark_read_messages(chat_id: UUID, current_user: Users = Depends(user_s
     db.commit()
 
     return {'msg': 'marked as read'}
+
+
+@chat.post('/file/upload')
+async def file_upload(request: Request, sender_id: int = Form(...), chat_id: UUID = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
+
+    max_size = 50 * 1024 * 1024
+    size = 0
+
+    file_ext = os.path.splitext(file.filename)[1]
+    file_name = f"{uuid4()}{file_ext}"
+    file_path = os.path.join(upload_dir, file_name)
+
+    with open(file_path, 'wb') as f:
+        while chunk := await file.read(1024*1024):
+            size += len(chunk)
+            if size > max_size:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail='File is too large!')
+
+            f.write(chunk)
+
+    mime_type, _ = mimetypes.guess_type(file.filename)
+    file_url = str(request.url_for('get_file', filename=file_name))
+    print(file_url)
+
+    new_message = Message(sender_id=sender_id, chat_id=chat_id,
+                          file_url=file_url, file_name=file.filename, unique_name=file_name, file_type=mime_type)
+
+    db.add(new_message)
+    db.commit()
+    db.refresh(new_message)
+
+    return {
+        "url": new_message.file_url,
+        "file_type": new_message.file_type,
+        "file_name": new_message.file_name,
+        "unique_name": new_message.unique_name
+    }
+
+
+@chat.get('/file/{filename}', name='get_file')
+async def get_file(filename: str, db: Session = Depends(get_db)):
+
+    exisiting_file = db.query(Message).filter(
+        Message.unique_name == filename).first()
+
+    if not exisiting_file:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="file not found in db")
+
+    file_path = os.path.join(upload_dir, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="file not found in system")
+
+    return FileResponse(file_path)

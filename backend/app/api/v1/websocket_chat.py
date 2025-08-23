@@ -61,7 +61,6 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                 )
 
             elif message_type == 'typing':
-                print('got message typing')
 
                 sender_id = data.get('sender_id')
                 isTyping = data.get('isTyping')
@@ -73,6 +72,35 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                         'isTyping': isTyping
                     }
                 )
+
+            elif message_type == 'file':
+
+                sender_id = data.get('sender_id')
+                content = data.get('data')
+                file_name = content['file_name']
+                file_url = content['file_url']
+                file_type = content['file_type']
+                unique_name = content['unique_name']
+
+                file_message = db.query(Message).filter(
+                    Message.unique_name == unique_name).one_or_none()
+
+                if file_message:
+
+                    await manager.broadcast(
+                        chat_id,
+                        {"type": message_type,
+                            "id": str(file_message.id),
+                            "sender_id": current_user.id,
+                            "sender": current_user.name,
+                            "file_name": file_name,
+                            "file_url": file_url,
+                            "file_type": file_type,
+                            "sent_at": file_message.sent_at.strftime("%I:%M %p"),
+                            "sent_time": file_message.sent_at.strftime("%I:%M %p"),
+                            "is_read": file_message.is_read
+                         }
+                    )
 
             else:
 

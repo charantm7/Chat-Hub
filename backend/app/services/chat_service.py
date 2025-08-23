@@ -4,7 +4,7 @@ import pytz
 from fastapi import HTTPException, status
 
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import desc, func, or_
+from sqlalchemy import Null, desc, func, or_
 from sqlalchemy.orm import aliased, Session
 
 from app.schemas.chat_schema import FriendRequestValidate
@@ -328,8 +328,12 @@ async def get_messages(db, chat_id):
             status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
 
     ist = pytz.timezone("Asia/Kolkata")  # if you want IST time
-    formatted_messages = [
-        {
+
+    formatted_messages = []
+
+    for m in messages:
+
+        base_data = {
             "id": m.id,
             "chat_id": m.chat_id,
             "sender_id": m.sender_id,
@@ -339,8 +343,18 @@ async def get_messages(db, chat_id):
             "is_read": m.is_read
 
         }
-        for m in messages
-    ]
+        if m.file_name is None:
+            base_data["content"] = m.content
+        else:
+            base_data.update(
+                {
+                    "file_name": m.file_name,
+                    "file_url": m.file_url,
+                    "file_type": m.file_type,
+                }
+            )
+
+        formatted_messages.append(base_data)
 
     return {
         "success": True,
