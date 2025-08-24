@@ -49,7 +49,7 @@ function ChatArea({ user, onSelect }) {
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [typingUser, setTypingUser] = useState([]);
-  const [message, setMessage] = useState("");
+  const [messageInfo, setMessageInfo] = useState("");
   const [file, setFile] = useState(null);
   const fileInputRef = useRef(null);
   const [contextMenu, setContextMenu] = useState({
@@ -57,13 +57,14 @@ function ChatArea({ user, onSelect }) {
     y: 0,
     msgId: null,
   });
-  console.log("files", file);
+  console.log("info messages", messageInfo);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   function handleOverlayClick(e) {
     if (e.target.id === "overlay") {
       resetFile();
+      setMessageInfo(null);
       setShowModal(null);
     }
   }
@@ -331,7 +332,6 @@ function ChatArea({ user, onSelect }) {
 
   const handleMessageChange = useCallback(
     (e) => {
-      setMessage(e.target.value);
       sendTypingIndicatorTrue();
       sendTypingIndicatorFalse();
     },
@@ -417,6 +417,18 @@ function ChatArea({ user, onSelect }) {
     const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
+  }
+
+  function handleInfo(message_id) {
+    setShowModal("msg_info");
+    const msgArray = Object.values(messages).flat();
+    const msg = msgArray.find((m) => m.id === message_id);
+
+    if (msg) {
+      setMessageInfo(msg);
+    } else {
+      console.error("no message found");
+    }
   }
 
   if (!user) {
@@ -740,6 +752,65 @@ function ChatArea({ user, onSelect }) {
                   </button>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
+      )}
+      {showModal == "msg_info" && (
+        <div
+          id="overlay"
+          onClick={handleOverlayClick}
+          className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
+        >
+          <div className="bg-[#ffffffd0] border border-black/10 p-3 flex flex-col gap-2 min-w-[20%] rounded-[10px] overflow-hidden">
+            {messageInfo.file_url ? (
+              messageInfo.file_type.startsWith("image/") ? (
+                <>
+                  <small>Message info</small>
+                  <div className="flex gap-4">
+                    <a href={messageInfo.file_url}>
+                      <img
+                        src={messageInfo.file_url}
+                        alt={messageInfo.file_name}
+                        className="max-h-40 rounded-md border"
+                      />
+                    </a>
+                    <div className="flex flex-col gap-1 bg-[#b3b3b3d0] p-3 rounded-md">
+                      <p>Status: {messageInfo.read | messageInfo.is_read ? "Seen" : "Delivered"}</p>
+                      <p>Time: {messageInfo.sent_time}</p>
+                      {messageInfo.sender && <p>Sender: {messageInfo.sender.name}</p>}
+                      <p>Type: {messageInfo.file_type}</p>
+                      <p>size: {formatFileSize(messageInfo.size)}</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <a href={messageInfo.file_url} target="_blank" rel="noopener noreferrer">
+                  <div
+                    className={`rounded-[5px] p-2 flex gap-2 items-center bg-gray-600
+                    `}
+                  >
+                    <FileIcons type={messageInfo.file_type} size={28} className="text-white" />
+
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[13.5px]">{messageInfo.file_name}</p>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-gray-300">{messageInfo.file_type}</span>
+                        <span className="text-[10px] text-gray-300">•</span>
+                        <span className="text-[10px] text-gray-300">
+                          {formatFileSize(Number(messageInfo.size))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              )
+            ) : (
+              <p
+                className={`relative inline-block min-w-[12%] max-w-[70%]  text-white pr-4 pl-4 pt-2 pb-[22px] rounded-[7px] break-words`}
+              >
+                {messageInfo.content}
+              </p>
             )}
           </div>
         </div>

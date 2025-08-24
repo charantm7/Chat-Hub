@@ -340,7 +340,8 @@ async def get_messages(db, chat_id):
             "content": m.content,
             "sent_at": m.sent_at.isoformat(),
             "sent_time": m.sent_at.astimezone(ist).strftime("%I:%M %p"),
-            "is_read": m.is_read
+            "is_read": m.is_read,
+            "sender": m.sender
 
         }
         if m.file_name is None:
