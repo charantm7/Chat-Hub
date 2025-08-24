@@ -74,6 +74,7 @@ class Message(Base):
     file_url = Column(String, nullable=True)
     file_type = Column(String, nullable=True)
     file_size = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False)
     sender = relationship('Users', back_populates='messages')
 
 

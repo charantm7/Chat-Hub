@@ -21,6 +21,7 @@ from app.services.chat_service import (
     get_messages,
 )
 from backend.app.services import user_service
+from app.core.websocket import manager
 
 
 chat = APIRouter()
@@ -186,3 +187,24 @@ async def get_file(filename: str, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND, detail="file not found in system")
 
     return FileResponse(file_path)
+
+
+@chat.post("/delete/{message_id}")
+async def delete_msg(message_id: UUID, db: Session = Depends(get_db)):
+
+    message = db.query(Message).filter(Message.id == message_id).one_or_none()
+
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+
+    message.is_deleted = True
+    db.commit()
+
+    await manager.broadcast(message.chat_id, {
+        'type': "delete_message",
+        'message_id': str(message_id),
+        'chat_id': str(message.chat_id)
+    })
+
+    return {'message': 'Message deleted successfully'}

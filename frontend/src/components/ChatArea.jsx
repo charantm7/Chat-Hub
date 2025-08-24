@@ -17,6 +17,7 @@ import { GetValidAccessToken } from "./index";
 import profileBg from "../assets/profile.jpg";
 import { CheckCircle, BadgeCheck } from "lucide-react";
 import FileIcons from "./Icons";
+import { Ban, CircleSlash } from "lucide-react";
 
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null);
@@ -57,7 +58,7 @@ function ChatArea({ user, onSelect }) {
     y: 0,
     msgId: null,
   });
-  console.log("info messages", messageInfo);
+  console.log("info messages", messages);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -182,6 +183,16 @@ function ChatArea({ user, onSelect }) {
           });
           break;
 
+        case "delete_message":
+          setMessages((prev) => {
+            const updated = { ...prev };
+            updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
+              m.id === msg.message_id ? { ...m, is_deleted: true } : m
+            );
+            return updated;
+          });
+          break;
+
         default:
           if (msg.Message) return;
 
@@ -236,6 +247,7 @@ function ChatArea({ user, onSelect }) {
       content: input,
       chat_id: user?.chat_id,
       sent_at: new Date().toISOString(),
+      is_deleted: false,
     };
 
     setMessages((prev) => {
@@ -390,6 +402,7 @@ function ChatArea({ user, onSelect }) {
         unique_name: response.unique_name,
         chat_id: user?.chat_id,
         sent_at: new Date().toISOString(),
+        is_deleted: false,
       };
       setMessages((prev) => {
         const previous = prev[user?.chat_id] || [];
@@ -428,6 +441,33 @@ function ChatArea({ user, onSelect }) {
       setMessageInfo(msg);
     } else {
       console.error("no message found");
+    }
+  }
+
+  async function handleDelete(message_id) {
+    const msgArray = Object.values(messages).flat();
+    const msg = msgArray.find((m) => m.id === message_id);
+
+    if (!msg) return;
+
+    try {
+      const req = await fetch(`http://127.0.0.1:8000/v1/chat/delete/${message_id}`, {
+        method: "POST",
+      });
+
+      if (!req.ok) throw new Error("Delete request failed");
+
+      setMessages((prev) => {
+        const newMessages = { ...prev };
+        for (const chatId in newMessages) {
+          newMessages[chatId] = newMessages[chatId].map((m) =>
+            m.id === message_id ? { ...m, is_deleted: true } : m
+          );
+        }
+        return newMessages;
+      });
+    } catch (err) {
+      console.error("Error deleting message:", err);
     }
   }
 
@@ -471,41 +511,145 @@ function ChatArea({ user, onSelect }) {
             key={msg.id}
             className={`p-3 ${msg.sender_id === currentUserID?.id ? "text-right" : "text-left"}`}
           >
-            {msg.file_url ? (
-              msg.file_type.startsWith("image/") ? (
-                <div
-                  className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                    msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
-                  } text-white p-[2px] rounded-[7px] break-words`}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setContextMenu({
-                      x: e.pageX,
-                      y: e.pageY,
-                      msgId: msg.id,
-                      senderId: msg.sender_id,
-                    });
-                  }}
-                >
-                  <a href={msg.file_url}>
-                    <img src={msg.file_url} alt={msg.file_name} className="max-h-40 rounded-md border" />
+            {msg.is_deleted ? (
+              <p
+                className={`relative inline-block text center min-w-[12%] max-w-[70%] ${
+                  msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                } text-white p-2 rounded-[7px] break-words`}
+              >
+                <span className="flex items-center gap-2">
+                  <Ban size={20} className="text-white" />
+                  You deleted this message
+                </span>
+              </p>
+            ) : (
+              <>
+                {msg.file_url ? (
+                  msg.file_type.startsWith("image/") ? (
+                    <div
+                      className={`relative inline-block min-w-[12%] max-w-[70%] ${
+                        msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                      } text-white p-[2px] rounded-[7px] break-words`}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenu({
+                          x: e.pageX,
+                          y: e.pageY,
+                          msgId: msg.id,
+                          senderId: msg.sender_id,
+                        });
+                      }}
+                    >
+                      <a href={msg.file_url}>
+                        <img src={msg.file_url} alt={msg.file_name} className="max-h-40 rounded-md border" />
+                        <span
+                          className={`absolute bottom-1 ${
+                            msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
+                          }  text-[11px] text-gray-300 `}
+                          style={{ textShadow: "1px 1px 2px black" }}
+                        >
+                          {msg.sent_time}
+                        </span>
+
+                        {msg.sender_id === currentUserID?.id && (
+                          <>
+                            {msg.read || msg.is_read ? (
+                              <span
+                                className="absolute bottom-1 right-2 text-[14px] text-gray-300"
+                                tyle={{ textShadow: "1px 1px 2px black" }}
+                              >
+                                <FontAwesomeIcon icon={faCheckDouble} />
+                              </span>
+                            ) : (
+                              <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
+                                <FontAwesomeIcon icon={faCheck} />
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </a>
+                    </div>
+                  ) : (
+                    <div
+                      className={`relative inline-block min-w-[12%] max-w-[70%] ${
+                        msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                      } text-white pr-2 pl-2 pt-2 pb-[30px] rounded-[7px] break-words`}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenu({
+                          x: e.pageX,
+                          y: e.pageY,
+                          msgId: msg.id,
+                          senderId: msg.sender_id,
+                        });
+                      }}
+                    >
+                      <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
+                        <div
+                          className={`rounded-[5px] p-2 flex gap-2 items-center  ${
+                            msg.sender_id === currentUserID?.id ? "bg-blue-800" : "bg-gray-600"
+                          }`}
+                        >
+                          <FileIcons type={msg.file_type} size={28} className="text-white" />
+
+                          <div className="flex flex-col gap-1">
+                            <p className="text-[13.5px]">{msg.file_name}</p>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-gray-300">{msg.file_type}</span>
+                              <span className="text-[10px] text-gray-300">•</span>
+                              <span className="text-[10px] text-gray-300">
+                                {formatFileSize(Number(msg.size))}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+                      <span
+                        className={`absolute bottom-1 ${
+                          msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
+                        }  text-[11px] text-gray-300`}
+                      >
+                        {msg.sent_time}
+                      </span>
+                      {msg.sender_id === currentUserID?.id && (
+                        <>
+                          {msg.read || msg.is_read ? (
+                            <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
+                              <FontAwesomeIcon icon={faCheckDouble} />
+                            </span>
+                          ) : (
+                            <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
+                              <FontAwesomeIcon icon={faCheck} />
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )
+                ) : (
+                  <p
+                    className={`relative inline-block min-w-[12%] max-w-[70%] ${
+                      msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                    } text-white pr-4 pl-4 pt-2 pb-[26px] rounded-[7px] break-words`}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setContextMenu({ x: e.pageX, y: e.pageY, msgId: msg.id, senderId: msg.sender_id });
+                    }}
+                  >
+                    {msg.content}
                     <span
                       className={`absolute bottom-1 ${
                         msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
-                      }  text-[11px] text-gray-300 `}
-                      style={{ textShadow: "1px 1px 2px black" }}
+                      }  text-[11px] text-gray-300`}
                     >
                       {msg.sent_time}
                     </span>
-
                     {msg.sender_id === currentUserID?.id && (
                       <>
                         {msg.read || msg.is_read ? (
-                          <span
-                            className="absolute bottom-1 right-2 text-[14px] text-gray-300"
-                            tyle={{ textShadow: "1px 1px 2px black" }}
-                          >
+                          <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
                             <FontAwesomeIcon icon={faCheckDouble} />
+                            {console.log("read", msg.is_read)}
                           </span>
                         ) : (
                           <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
@@ -514,98 +658,9 @@ function ChatArea({ user, onSelect }) {
                         )}
                       </>
                     )}
-                  </a>
-                </div>
-              ) : (
-                <div
-                  className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                    msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
-                  } text-white pr-2 pl-2 pt-2 pb-[30px] rounded-[7px] break-words`}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setContextMenu({
-                      x: e.pageX,
-                      y: e.pageY,
-                      msgId: msg.id,
-                      senderId: msg.sender_id,
-                    });
-                  }}
-                >
-                  <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
-                    <div
-                      className={`rounded-[5px] p-2 flex gap-2 items-center  ${
-                        msg.sender_id === currentUserID?.id ? "bg-blue-800" : "bg-gray-600"
-                      }`}
-                    >
-                      <FileIcons type={msg.file_type} size={28} className="text-white" />
-
-                      <div className="flex flex-col gap-1">
-                        <p className="text-[13.5px]">{msg.file_name}</p>
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-gray-300">{msg.file_type}</span>
-                          <span className="text-[10px] text-gray-300">•</span>
-                          <span className="text-[10px] text-gray-300">
-                            {formatFileSize(Number(msg.size))}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                  <span
-                    className={`absolute bottom-1 ${
-                      msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
-                    }  text-[11px] text-gray-300`}
-                  >
-                    {msg.sent_time}
-                  </span>
-                  {msg.sender_id === currentUserID?.id && (
-                    <>
-                      {msg.read || msg.is_read ? (
-                        <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
-                          <FontAwesomeIcon icon={faCheckDouble} />
-                        </span>
-                      ) : (
-                        <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
-                          <FontAwesomeIcon icon={faCheck} />
-                        </span>
-                      )}
-                    </>
-                  )}
-                </div>
-              )
-            ) : (
-              <p
-                className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                  msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
-                } text-white pr-4 pl-4 pt-2 pb-[26px] rounded-[7px] break-words`}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setContextMenu({ x: e.pageX, y: e.pageY, msgId: msg.id, senderId: msg.sender_id });
-                }}
-              >
-                {msg.content}
-                <span
-                  className={`absolute bottom-1 ${
-                    msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
-                  }  text-[11px] text-gray-300`}
-                >
-                  {msg.sent_time}
-                </span>
-                {msg.sender_id === currentUserID?.id && (
-                  <>
-                    {msg.read || msg.is_read ? (
-                      <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
-                        <FontAwesomeIcon icon={faCheckDouble} />
-                        {console.log("read", msg.is_read)}
-                      </span>
-                    ) : (
-                      <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
-                        <FontAwesomeIcon icon={faCheck} />
-                      </span>
-                    )}
-                  </>
+                  </p>
                 )}
-              </p>
+              </>
             )}
           </div>
         ))}
@@ -704,7 +759,7 @@ function ChatArea({ user, onSelect }) {
               </li>
               <li
                 className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                onClick={() => handleDelete(contextMenu.msgId)}
+                onClick={() => setShowModal({ msgId: contextMenu.msgId })}
               >
                 Delete
               </li>
@@ -756,88 +811,147 @@ function ChatArea({ user, onSelect }) {
           </div>
         </div>
       )}
-      {showModal == "msg_info" && (
+      {showModal === "msg_info" && (
+        <div
+          id="overlay"
+          onClick={handleOverlayClick}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+        >
+          <div
+            className="bg-white/95 border border-gray-200 shadow-2xl rounded-xl p-5 w-[90%] max-w-md relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowModal(null)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-black"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Message Details</h2>
+
+            {messageInfo.file_url ? (
+              messageInfo.file_type.startsWith("image/") ? (
+                <div className="flex flex-col gap-4">
+                  <a
+                    href={messageInfo.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex justify-center"
+                  >
+                    <img
+                      src={messageInfo.file_url}
+                      alt={messageInfo.file_name}
+                      className="max-h-56 rounded-lg shadow-md border"
+                    />
+                  </a>
+
+                  <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
+                    <p>
+                      <span className="font-medium">Status:</span>{" "}
+                      {messageInfo.read || messageInfo.is_read ? "Seen" : "Delivered"}
+                    </p>
+                    <p>
+                      <span className="font-medium">Time:</span> {messageInfo.sent_time}
+                    </p>
+                    <p>
+                      <span className="font-medium">Sender:</span>{" "}
+                      {messageInfo.sender.name || messageInfo.sender}
+                    </p>
+                    <p>
+                      <span className="font-medium">Type:</span> {messageInfo.file_type}
+                    </p>
+                    <p>
+                      <span className="font-medium">Size:</span> {formatFileSize(Number(messageInfo.size))}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <a href={messageInfo.file_url} target="_blank" rel="noopener noreferrer">
+                    <div className="rounded-lg p-3 flex gap-3 items-center bg-gray-700 hover:bg-gray-600 transition">
+                      <FileIcons type={messageInfo.file_type} size={32} className="text-white" />
+                      <div>
+                        <p className="text-sm font-medium text-white truncate">{messageInfo.file_name}</p>
+                        <p className="text-xs text-gray-300">
+                          {messageInfo.file_type} • {formatFileSize(messageInfo.size)}
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+
+                  <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
+                    <p>
+                      <span className="font-medium">Status:</span>{" "}
+                      {messageInfo.read || messageInfo.is_read ? "Seen" : "Delivered"}
+                    </p>
+                    <p>
+                      <span className="font-medium">Time:</span> {messageInfo.sent_time}
+                    </p>
+                    <p>
+                      <span className="font-medium">Sender:</span>{" "}
+                      {messageInfo.sender.name || messageInfo.sender}
+                    </p>
+                    <p>
+                      <span className="font-medium">Type:</span> {messageInfo.file_type}
+                    </p>
+                    <p>
+                      <span className="font-medium">Size:</span> {formatFileSize(Number(messageInfo.size))}
+                    </p>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div className="bg-[#c4c3c3e1]  p-3 rounded-lg text-sm text-gray-800 ">
+                  {messageInfo.content}
+                </div>
+                <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
+                  <p>
+                    <span className="font-medium">Status:</span>{" "}
+                    {messageInfo.read || messageInfo.is_read ? " Seen" : "Delivered"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Time:</span> {messageInfo.sent_time}
+                  </p>
+                  <p>
+                    <span className="font-medium">Sender:</span>{" "}
+                    {messageInfo.sender.name || messageInfo.sender}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showModal?.msgId && (
         <div
           id="overlay"
           onClick={handleOverlayClick}
           className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
         >
-          <div className="bg-[#ffffffd0] border border-black/10 p-3 flex flex-col gap-2 min-w-[20%] rounded-[10px] overflow-hidden">
-            {messageInfo.file_url ? (
-              messageInfo.file_type.startsWith("image/") ? (
-                <>
-                  <small>Message info</small>
-                  <div className="flex gap-4">
-                    <a href={messageInfo.file_url}>
-                      <img
-                        src={messageInfo.file_url}
-                        alt={messageInfo.file_name}
-                        className="max-h-40 rounded-md border"
-                      />
-                    </a>
-                    <div className="flex flex-col gap-1 text-[15px] bg-[#b3b3b3d0] p-3 rounded-md">
-                      <p>Status: {messageInfo.read | messageInfo.is_read ? "Seen" : "Delivered"}</p>
-                      <p>Time: {messageInfo.sent_time}</p>
-                      {messageInfo.sender.name ? (
-                        <p>Sender: {messageInfo.sender.name}</p>
-                      ) : (
-                        <p>Sender: {messageInfo.sender}</p>
-                      )}
-                      <p>Type: {messageInfo.file_type}</p>
-                      <p>size: {formatFileSize(messageInfo.size)}</p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <small>Message Info</small>
-                  <a href={messageInfo.file_url} target="_blank" rel="noopener noreferrer">
-                    <div
-                      className={`rounded-[5px] p-2 flex gap-2 items-center bg-gray-600
-                    `}
-                    >
-                      <FileIcons type={messageInfo.file_type} size={28} className="text-white" />
+          <div className="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg font-semibold mb-2">Delete Message</h2>
+            <p className="text-sm text-gray-300 mb-4">Are you sure you want to delete this message?</p>
 
-                      <div className="flex flex-col gap-1">
-                        <p className="text-[13.5px] text-gray-300">{messageInfo.file_name}</p>
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-gray-300">{messageInfo.file_type}</span>
-                          <span className="text-[10px] text-gray-300">•</span>
-                          <span className="text-[10px] text-gray-300">
-                            {formatFileSize(Number(messageInfo.size))}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                  <div className="flex flex-col gap-1 text-[14px]  bg-[#b3b3b3d0] p-2 rounded-md">
-                    <p>Status: {messageInfo.read | messageInfo.is_read ? "Seen" : "Delivered"}</p>
-                    <p>Time: {messageInfo.sent_time}</p>
-                    {messageInfo.sender.name ? (
-                      <p>Sender: {messageInfo.sender.name}</p>
-                    ) : (
-                      <p>Sender: {messageInfo.sender}</p>
-                    )}
-                    <p>Type: {messageInfo.file_type}</p>
-                    <p>Size: {formatFileSize(messageInfo.size)}</p>
-                  </div>
-                </div>
-              )
-            ) : (
-              <div className="flex flex-col gap-2">
-                <small>Message Info</small>
-                <p className="bg-gray-400 p-2 rounded-md ">{messageInfo.content}</p>
-                <div className="flex flex-col gap-1 text-[14px]  bg-[#b3b3b3d0] p-2 rounded-md">
-                  <p>Status: {messageInfo.read | messageInfo.is_read ? "Seen" : "Delivered"}</p>
-                  <p>Time: {messageInfo.sent_time}</p>
-                  {messageInfo.sender.name ? (
-                    <p>Sender: {messageInfo.sender.name}</p>
-                  ) : (
-                    <p>Sender: {messageInfo.sender}</p>
-                  )}
-                </div>
-              </div>
-            )}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowModal(null)}
+                className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleDelete(showModal.msgId);
+                  setShowModal(null);
+                }}
+                className="px-3 py-1 rounded bg-red-600 hover:bg-red-500"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

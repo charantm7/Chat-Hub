@@ -125,7 +125,8 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                         "content": content,
                         "sent_at": new_message.sent_at.strftime("%I:%M %p"),
                         "sent_time": new_message.sent_at.strftime("%I:%M %p"),
-                        "is_read": new_message.is_read
+                        "is_read": new_message.is_read,
+                        "is_deleted": new_message.is_deleted
                      }
                 )
     except WebSocketDisconnect:
