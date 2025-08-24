@@ -73,6 +73,7 @@ class Message(Base):
     unique_name = Column(String, nullable=True)
     file_url = Column(String, nullable=True)
     file_type = Column(String, nullable=True)
+    file_size = Column(String, nullable=True)
     sender = relationship('Users', back_populates='messages')
 
 

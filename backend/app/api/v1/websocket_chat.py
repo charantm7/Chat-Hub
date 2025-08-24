@@ -81,6 +81,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                 file_url = content['file_url']
                 file_type = content['file_type']
                 unique_name = content['unique_name']
+                size = content['size']
 
                 file_message = db.query(Message).filter(
                     Message.unique_name == unique_name).one_or_none()
@@ -95,6 +96,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                             "sender": current_user.name,
                             "file_name": file_name,
                             "file_url": file_url,
+                            "size": size,
                             "file_type": file_type,
                             "sent_at": file_message.sent_at.strftime("%I:%M %p"),
                             "sent_time": file_message.sent_at.strftime("%I:%M %p"),

@@ -12,9 +12,11 @@ import {
   faCheck,
   faCheckDouble,
 } from "@fortawesome/free-solid-svg-icons";
+
 import { GetValidAccessToken } from "./index";
 import profileBg from "../assets/profile.jpg";
 import { CheckCircle, BadgeCheck } from "lucide-react";
+import FileIcons from "./Icons";
 
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null);
@@ -371,6 +373,7 @@ function ChatArea({ user, onSelect }) {
               file_name: response.file_name,
               file_type: response.file_type,
               unique_name: response.unique_name,
+              size: response.size,
             },
           })
         );
@@ -381,6 +384,7 @@ function ChatArea({ user, onSelect }) {
         sender_id: currentUserID?.id,
         file_name: response.file_name,
         type: "file",
+        size: response.size,
         url: response.file_url,
         file_type: response.file_type,
         unique_name: response.unique_name,
@@ -406,6 +410,14 @@ function ChatArea({ user, onSelect }) {
       fileInputRef.current.value = "";
     }
   };
+
+  function formatFileSize(bytes) {
+    if (bytes == null || isNaN(bytes)) return "-"; // fallback when null/invalid
+    if (bytes === 0) return "0 B";
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
+  }
 
   if (!user) {
     return (
@@ -452,7 +464,7 @@ function ChatArea({ user, onSelect }) {
                 <div
                   className={`relative inline-block min-w-[12%] max-w-[70%] ${
                     msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
-                  } text-white pr-2 pl-2 pt-2 pb-[22px] rounded-[7px] break-words`}
+                  } text-white p-[2px] rounded-[7px] break-words`}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     setContextMenu({
@@ -463,64 +475,91 @@ function ChatArea({ user, onSelect }) {
                     });
                   }}
                 >
-                  <img src={msg.file_url} alt={msg.file_name} className="max-h-40 rounded-md border mb-2" />
-                  <p className="text-xs text-gray-200">{msg.file_name}</p>
+                  <a href={msg.file_url}>
+                    <img src={msg.file_url} alt={msg.file_name} className="max-h-40 rounded-md border" />
+                    <span
+                      className={`absolute bottom-1 ${
+                        msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
+                      }  text-[11px] text-gray-300 `}
+                      style={{ textShadow: "1px 1px 2px black" }}
+                    >
+                      {msg.sent_time}
+                    </span>
 
-                  <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
+                    {msg.sender_id === currentUserID?.id && (
+                      <>
+                        {msg.read || msg.is_read ? (
+                          <span
+                            className="absolute bottom-1 right-2 text-[14px] text-gray-300"
+                            tyle={{ textShadow: "1px 1px 2px black" }}
+                          >
+                            <FontAwesomeIcon icon={faCheckDouble} />
+                          </span>
+                        ) : (
+                          <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
+                            <FontAwesomeIcon icon={faCheck} />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </a>
+                </div>
+              ) : (
+                <div
+                  className={`relative inline-block min-w-[12%] max-w-[70%] ${
+                    msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                  } text-white pr-2 pl-2 pt-2 pb-[30px] rounded-[7px] break-words`}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({
+                      x: e.pageX,
+                      y: e.pageY,
+                      msgId: msg.id,
+                      senderId: msg.sender_id,
+                    });
+                  }}
+                >
+                  <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
+                    <div
+                      className={`rounded-[5px] p-2 flex gap-2 items-center  ${
+                        msg.sender_id === currentUserID?.id ? "bg-blue-800" : "bg-gray-600"
+                      }`}
+                    >
+                      <FileIcons type={msg.file_type} size={28} className="text-white" />
 
+                      <div className="flex flex-col gap-1">
+                        <p className="text-[13.5px]">{msg.file_name}</p>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-gray-300">{msg.file_type}</span>
+                          <span className="text-[10px] text-gray-300">•</span>
+                          <span className="text-[10px] text-gray-300">
+                            {formatFileSize(Number(msg.size))}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                  <span
+                    className={`absolute bottom-1 ${
+                      msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
+                    }  text-[11px] text-gray-300`}
+                  >
+                    {msg.sent_time}
+                  </span>
                   {msg.sender_id === currentUserID?.id && (
                     <>
                       {msg.read || msg.is_read ? (
-                        <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
-                          <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
+                        <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
+                          <FontAwesomeIcon icon={faCheckDouble} />
                         </span>
                       ) : (
-                        <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
-                          <FontAwesomeIcon icon={faCheck} className="text-[12px]" />
+                        <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
+                          <FontAwesomeIcon icon={faCheck} />
                         </span>
                       )}
                     </>
                   )}
                 </div>
-              ) : (
-                <p
-                  className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                    msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
-                  } text-white pr-4 pl-4 pt-[30px] pb-[22px] rounded-[7px] break-words`}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setContextMenu({
-                      x: e.pageX,
-                      y: e.pageY,
-                      msgId: msg.id,
-                      senderId: msg.sender_id,
-                    });
-                  }}
-                >
-                  <span className="absolute top-2 left-3 text-[12px] text-gray-300">{msg.file_type}</span>
-                  <a
-                    href={msg.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-blue-200"
-                  >
-                    📎 {msg.file_name}
-                  </a>
-                  <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
-                  {msg.sender_id === currentUserID?.id && (
-                    <>
-                      {msg.read || msg.is_read ? (
-                        <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
-                          <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
-                        </span>
-                      ) : (
-                        <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
-                          <FontAwesomeIcon icon={faCheck} className="text-[12px]" />
-                        </span>
-                      )}
-                    </>
-                  )}
-                </p>
               )
             ) : (
               <p
@@ -533,17 +572,23 @@ function ChatArea({ user, onSelect }) {
                 }}
               >
                 {msg.content}
-                <span className="absolute bottom-1 right-7 text-[9px] text-gray-300">{msg.sent_time}</span>
+                <span
+                  className={`absolute bottom-1 ${
+                    msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
+                  }  text-[11px] text-gray-300`}
+                >
+                  {msg.sent_time}
+                </span>
                 {msg.sender_id === currentUserID?.id && (
                   <>
                     {msg.read || msg.is_read ? (
-                      <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
-                        <FontAwesomeIcon icon={faCheckDouble} className="text-[12px]" />
+                      <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
+                        <FontAwesomeIcon icon={faCheckDouble} />
                         {console.log("read", msg.is_read)}
                       </span>
                     ) : (
-                      <span className="absolute bottom-1 right-2 text-[9px] text-gray-300">
-                        <FontAwesomeIcon icon={faCheck} className="text-[12px]" />
+                      <span className="absolute bottom-1 right-2 text-[14px] text-gray-300">
+                        <FontAwesomeIcon icon={faCheck} />
                       </span>
                     )}
                   </>

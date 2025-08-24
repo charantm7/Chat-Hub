@@ -154,7 +154,7 @@ async def file_upload(request: Request, sender_id: int = Form(...), chat_id: UUI
     print(file_url)
 
     new_message = Message(sender_id=sender_id, chat_id=chat_id,
-                          file_url=file_url, file_name=file.filename, unique_name=file_name, file_type=mime_type)
+                          file_url=file_url, file_name=file.filename, file_size=size, unique_name=file_name, file_type=mime_type)
 
     db.add(new_message)
     db.commit()
@@ -164,7 +164,8 @@ async def file_upload(request: Request, sender_id: int = Form(...), chat_id: UUI
         "url": new_message.file_url,
         "file_type": new_message.file_type,
         "file_name": new_message.file_name,
-        "unique_name": new_message.unique_name
+        "unique_name": new_message.unique_name,
+        "size": new_message.file_size
     }
 
 

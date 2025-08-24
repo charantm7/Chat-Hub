@@ -351,6 +351,7 @@ async def get_messages(db, chat_id):
                     "file_name": m.file_name,
                     "file_url": m.file_url,
                     "file_type": m.file_type,
+                    "size": m.file_size
                 }
             )
 
