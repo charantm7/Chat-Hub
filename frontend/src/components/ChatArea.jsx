@@ -577,7 +577,7 @@ function ChatArea({ user, onSelect }) {
               <p
                 className={`relative inline-block min-w-[12%] max-w-[70%] ${
                   msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
-                } text-white pr-4 pl-4 pt-2 pb-[22px] rounded-[7px] break-words`}
+                } text-white pr-4 pl-4 pt-2 pb-[26px] rounded-[7px] break-words`}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setContextMenu({ x: e.pageX, y: e.pageY, msgId: msg.id, senderId: msg.sender_id });
@@ -775,42 +775,68 @@ function ChatArea({ user, onSelect }) {
                         className="max-h-40 rounded-md border"
                       />
                     </a>
-                    <div className="flex flex-col gap-1 bg-[#b3b3b3d0] p-3 rounded-md">
+                    <div className="flex flex-col gap-1 text-[15px] bg-[#b3b3b3d0] p-3 rounded-md">
                       <p>Status: {messageInfo.read | messageInfo.is_read ? "Seen" : "Delivered"}</p>
                       <p>Time: {messageInfo.sent_time}</p>
-                      {messageInfo.sender && <p>Sender: {messageInfo.sender.name}</p>}
+                      {messageInfo.sender.name ? (
+                        <p>Sender: {messageInfo.sender.name}</p>
+                      ) : (
+                        <p>Sender: {messageInfo.sender}</p>
+                      )}
                       <p>Type: {messageInfo.file_type}</p>
                       <p>size: {formatFileSize(messageInfo.size)}</p>
                     </div>
                   </div>
                 </>
               ) : (
-                <a href={messageInfo.file_url} target="_blank" rel="noopener noreferrer">
-                  <div
-                    className={`rounded-[5px] p-2 flex gap-2 items-center bg-gray-600
+                <div className="flex flex-col gap-2">
+                  <small>Message Info</small>
+                  <a href={messageInfo.file_url} target="_blank" rel="noopener noreferrer">
+                    <div
+                      className={`rounded-[5px] p-2 flex gap-2 items-center bg-gray-600
                     `}
-                  >
-                    <FileIcons type={messageInfo.file_type} size={28} className="text-white" />
+                    >
+                      <FileIcons type={messageInfo.file_type} size={28} className="text-white" />
 
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[13.5px]">{messageInfo.file_name}</p>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-gray-300">{messageInfo.file_type}</span>
-                        <span className="text-[10px] text-gray-300">•</span>
-                        <span className="text-[10px] text-gray-300">
-                          {formatFileSize(Number(messageInfo.size))}
-                        </span>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-[13.5px] text-gray-300">{messageInfo.file_name}</p>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-gray-300">{messageInfo.file_type}</span>
+                          <span className="text-[10px] text-gray-300">•</span>
+                          <span className="text-[10px] text-gray-300">
+                            {formatFileSize(Number(messageInfo.size))}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                  </a>
+                  <div className="flex flex-col gap-1 text-[14px]  bg-[#b3b3b3d0] p-2 rounded-md">
+                    <p>Status: {messageInfo.read | messageInfo.is_read ? "Seen" : "Delivered"}</p>
+                    <p>Time: {messageInfo.sent_time}</p>
+                    {messageInfo.sender.name ? (
+                      <p>Sender: {messageInfo.sender.name}</p>
+                    ) : (
+                      <p>Sender: {messageInfo.sender}</p>
+                    )}
+                    <p>Type: {messageInfo.file_type}</p>
+                    <p>Size: {formatFileSize(messageInfo.size)}</p>
                   </div>
-                </a>
+                </div>
               )
             ) : (
-              <p
-                className={`relative inline-block min-w-[12%] max-w-[70%]  text-white pr-4 pl-4 pt-2 pb-[22px] rounded-[7px] break-words`}
-              >
-                {messageInfo.content}
-              </p>
+              <div className="flex flex-col gap-2">
+                <small>Message Info</small>
+                <p className="bg-gray-400 p-2 rounded-md ">{messageInfo.content}</p>
+                <div className="flex flex-col gap-1 text-[14px]  bg-[#b3b3b3d0] p-2 rounded-md">
+                  <p>Status: {messageInfo.read | messageInfo.is_read ? "Seen" : "Delivered"}</p>
+                  <p>Time: {messageInfo.sent_time}</p>
+                  {messageInfo.sender.name ? (
+                    <p>Sender: {messageInfo.sender.name}</p>
+                  ) : (
+                    <p>Sender: {messageInfo.sender}</p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
