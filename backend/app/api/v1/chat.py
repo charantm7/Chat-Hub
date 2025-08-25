@@ -208,3 +208,26 @@ async def delete_msg(message_id: UUID, db: Session = Depends(get_db)):
     })
 
     return {'message': 'Message deleted successfully'}
+
+
+@chat.put('/edit/message/{message_id}')
+async def edit_message(message_id: UUID, content: str = Form(...), db: Session = Depends(get_db)):
+
+    message = db.query(Message).filter(Message.id == message_id).one_or_none()
+
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+
+    message.content = content
+    db.commit()
+
+    await manager.broadcast(message.chat_id, {
+        "type": "message_edit",
+        "message_id": str(message_id),
+        "chat_id": str(message.chat_id),
+        "content": message.content
+
+    })
+
+    return {"message": "Message edited successfully"}

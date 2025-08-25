@@ -53,12 +53,13 @@ function ChatArea({ user, onSelect }) {
   const [messageInfo, setMessageInfo] = useState("");
   const [file, setFile] = useState(null);
   const fileInputRef = useRef(null);
+  const [editContent, setEditContent] = useState(null);
   const [contextMenu, setContextMenu] = useState({
     x: 0,
     y: 0,
     msgId: null,
   });
-  console.log("info messages", messages);
+  console.log("context menu", contextMenu);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -66,6 +67,7 @@ function ChatArea({ user, onSelect }) {
     if (e.target.id === "overlay") {
       resetFile();
       setMessageInfo(null);
+      setEditContent(null);
       setShowModal(null);
     }
   }
@@ -181,6 +183,17 @@ function ChatArea({ user, onSelect }) {
 
             return updated;
           });
+          break;
+
+        case "message_edit":
+          setMessages((prev) => {
+            const updated = { ...prev };
+            updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
+              m.id === msg.message_id ? { ...m, content: msg.content } : m
+            );
+            return updated;
+          });
+
           break;
 
         case "delete_message":
@@ -471,6 +484,49 @@ function ChatArea({ user, onSelect }) {
     }
   }
 
+  const handleMessageEditOnchage = (e) => {
+    setEditContent(e.target.value);
+  };
+
+  async function handleEdit(message_id) {
+    if (message_id) {
+      console.log(message_id);
+    } else {
+      console.error("no message id");
+    }
+    const data = new FormData();
+
+    data.append("content", editContent);
+
+    try {
+      const req = await fetch(`http://127.0.0.1:8000/v1/chat/edit/message/${message_id}`, {
+        method: "PUT",
+        body: data,
+      });
+
+      if (!req.ok) throw new Error("Edit request failed");
+      setEditContent(null);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const getContextMenuXY = (clickX, ClickY) => {
+    let x = clickX;
+    let y = clickX;
+
+    const menuWidth = 73.8;
+    const menuHeight = 144;
+
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 10;
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - 10;
+    }
+    return { x, y };
+  };
+
   if (!user) {
     return (
       <div className="flex-1 flex items-center justify-center p-4 text-gray-400">
@@ -532,9 +588,10 @@ function ChatArea({ user, onSelect }) {
                       } text-white p-[2px] rounded-[7px] break-words`}
                       onContextMenu={(e) => {
                         e.preventDefault();
+                        const { x, y } = getContextMenuXY(e.pageX, e.pageY);
                         setContextMenu({
-                          x: e.pageX,
-                          y: e.pageY,
+                          x,
+                          y,
                           msgId: msg.id,
                           senderId: msg.sender_id,
                         });
@@ -553,7 +610,7 @@ function ChatArea({ user, onSelect }) {
 
                         {msg.sender_id === currentUserID?.id && (
                           <>
-                            {msg.read || msg.is_read ? (
+                            {msg.read | msg.is_read ? (
                               <span
                                 className="absolute bottom-1 right-2 text-[14px] text-gray-300"
                                 tyle={{ textShadow: "1px 1px 2px black" }}
@@ -576,9 +633,10 @@ function ChatArea({ user, onSelect }) {
                       } text-white pr-2 pl-2 pt-2 pb-[30px] rounded-[7px] break-words`}
                       onContextMenu={(e) => {
                         e.preventDefault();
+                        const { x, y } = getContextMenuXY(e.pageX, e.pageY);
                         setContextMenu({
-                          x: e.pageX,
-                          y: e.pageY,
+                          x,
+                          y,
                           msgId: msg.id,
                           senderId: msg.sender_id,
                         });
@@ -633,7 +691,13 @@ function ChatArea({ user, onSelect }) {
                     } text-white pr-4 pl-4 pt-2 pb-[26px] rounded-[7px] break-words`}
                     onContextMenu={(e) => {
                       e.preventDefault();
-                      setContextMenu({ x: e.pageX, y: e.pageY, msgId: msg.id, senderId: msg.sender_id });
+                      const { x, y } = getContextMenuXY(e.pageX, e.pageY);
+                      setContextMenu({
+                        x,
+                        y,
+                        msgId: msg.id,
+                        senderId: msg.sender_id,
+                      });
                     }}
                   >
                     {msg.content}
@@ -753,7 +817,9 @@ function ChatArea({ user, onSelect }) {
             <div>
               <li
                 className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                onClick={() => handleEdit(contextMenu.msgId)}
+                onClick={() =>
+                  setShowModal({ EditMsgId: contextMenu.msgId, EditMsgInfo: contextMenu.msgInfo })
+                }
               >
                 Edit
               </li>
@@ -950,6 +1016,48 @@ function ChatArea({ user, onSelect }) {
                 className="px-3 py-1 rounded bg-red-600 hover:bg-red-500"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showModal?.EditMsgId && (
+        <div
+          id="overlay"
+          onClick={handleOverlayClick}
+          className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
+        >
+          <div className="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg font-semibold mb-2">Edit Message</h2>
+            <p className="text-sm text-gray-300 mb-4">{showModal.EditMsgInfo}</p>
+            <textarea
+              name="content"
+              value={editContent}
+              onChange={(e) => {
+                if (e) {
+                  handleMessageEditOnchage(e);
+                }
+                e.target.value = "";
+              }}
+              id="content"
+              className="w-[100%] border-1"
+            ></textarea>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowModal(null)}
+                className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleEdit(showModal.EditMsgId);
+                  setShowModal(null);
+                }}
+                className="px-3 py-1 rounded bg-red-600 hover:bg-red-500"
+              >
+                Edit
               </button>
             </div>
           </div>
