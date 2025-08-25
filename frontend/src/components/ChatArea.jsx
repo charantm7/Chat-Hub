@@ -575,8 +575,10 @@ function ChatArea({ user, onSelect }) {
             {msg.is_deleted ? (
               <p
                 className={`relative inline-block text center min-w-[12%] max-w-[70%] ${
-                  msg.sender_id === currentUserID?.id ? "bg-[#06776e] text-left" : "bg-gray-700"
-                } text-white p-2 rounded-[7px] break-words`}
+                  msg.sender_id === currentUserID?.id
+                    ? "bg-[#06776e] rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] text-left"
+                    : "bg-gray-700 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                } text-white p-2 break-words`}
               >
                 <span className="flex items-center gap-2">
                   <Ban size={20} className="text-white" />
@@ -589,8 +591,10 @@ function ChatArea({ user, onSelect }) {
                   msg.file_type.startsWith("image/") ? (
                     <div
                       className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                        msg.sender_id === currentUserID?.id ? "bg-[#06776e]  text-left" : "bg-gray-700"
-                      } text-white p-[2px] rounded-[7px] break-words`}
+                        msg.sender_id === currentUserID?.id
+                          ? "bg-[#06776e]  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                          : "bg-gray-700 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                      } text-white p-[2px]  break-words`}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         const { x, y } = getContextMenuXY(e.pageX, e.pageY);
@@ -606,7 +610,15 @@ function ChatArea({ user, onSelect }) {
                       }}
                     >
                       <a href={msg.file_url}>
-                        <img src={msg.file_url} alt={msg.file_name} className="max-h-40 rounded-md " />
+                        <img
+                          src={msg.file_url}
+                          alt={msg.file_name}
+                          className={`max-h-40 ${
+                            msg.sender_id === currentUserID?.id
+                              ? " rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                              : "rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                          } `}
+                        />
                         <span
                           className={`absolute bottom-1 ${
                             msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
@@ -637,8 +649,10 @@ function ChatArea({ user, onSelect }) {
                   ) : (
                     <div
                       className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                        msg.sender_id === currentUserID?.id ? "bg-[#06776e]  text-left" : "bg-gray-700"
-                      } text-white pr-2 pl-2 pt-2 pb-[30px] rounded-[7px] break-words`}
+                        msg.sender_id === currentUserID?.id
+                          ? "bg-[#06776e]  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                          : "bg-gray-700 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                      } text-white pr-[5px] pl-[5px] pt-[5px] pb-[28px]  break-words`}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         const { x, y } = getContextMenuXY(e.pageX, e.pageY);
@@ -656,8 +670,10 @@ function ChatArea({ user, onSelect }) {
                     >
                       <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
                         <div
-                          className={`rounded-[5px] p-2 flex gap-2 items-center  ${
-                            msg.sender_id === currentUserID?.id ? "bg-[#045b54] " : "bg-gray-600"
+                          className={` p-2 flex gap-2 items-center  ${
+                            msg.sender_id === currentUserID?.id
+                              ? "bg-[#045b54] rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                              : "bg-gray-600 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
                           }`}
                         >
                           <FileIcons type={msg.file_type} size={28} className="text-white" />
@@ -699,8 +715,10 @@ function ChatArea({ user, onSelect }) {
                 ) : (
                   <div
                     className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                      msg.sender_id === currentUserID?.id ? "bg-[#06776e] text-left" : "bg-gray-700"
-                    } text-white pr-2 pl-2 pt-2 pb-[10px] rounded-[7px] `}
+                      msg.sender_id === currentUserID?.id
+                        ? "bg-[#06776e] text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                        : "bg-gray-700 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                    } text-white pr-[5px] pl-[5px] pt-[5px] pb-[10px]  `}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       const { x, y } = getContextMenuXY(e.pageX, e.pageY);
@@ -717,14 +735,22 @@ function ChatArea({ user, onSelect }) {
                     <span className="flex flex-col gap-1">
                       {msg.reply_to && (
                         <span
-                          className={`rounded-md flex ${
-                            msg.sender_id === currentUserID?.id ? "bg-[#12514bc4] " : "bg-gray-600"
+                          className={` flex ${
+                            msg.sender_id === currentUserID?.id
+                              ? "bg-[#12514bc4] rounded-br-[6px] rounded-bl-[6px] rounded-tl-[6px] "
+                              : "bg-gray-600 rounded-br-[6px] rounded-bl-[6px] rounded-tr-[6px]"
                           }`}
                         >
                           {msg.reply_file_url ? (
                             msg.reply_file_type.startsWith("image/") ? (
                               <div className="flex w-[100%] gap-2">
-                                <div className="bg-[#ffffffcf] rounded-l-[4px] w-[8px] "></div>
+                                <div
+                                  className={`bg-[#ffffffcf] ${
+                                    msg.sender_id === currentUserID?.id
+                                      ? "rounded-l-[4px]"
+                                      : "rounded-bl-[4px]"
+                                  }  w-[8px] `}
+                                ></div>
                                 <div className="flex justify-between gap-2 w-[100%]">
                                   {msg.reply_sender?.id === currentUserID?.id ? (
                                     <p className="mt-2 text-[12px]">You</p>
@@ -740,7 +766,13 @@ function ChatArea({ user, onSelect }) {
                               </div>
                             ) : (
                               <div className="flex gap-2">
-                                <div className="bg-[#ffffffcf] rounded-l-[4px] w-[8px] "></div>
+                                <div
+                                  className={`bg-[#ffffffcf] ${
+                                    msg.sender_id === currentUserID?.id
+                                      ? "rounded-l-[4px]"
+                                      : "rounded-bl-[4px]"
+                                  }  w-[8px] `}
+                                ></div>
                                 <div className="pb-2">
                                   {msg.reply_sender?.id === currentUserID?.id ? (
                                     <p className="mt-2 text-[12px]">You</p>
@@ -756,7 +788,11 @@ function ChatArea({ user, onSelect }) {
                             )
                           ) : (
                             <div className="flex gap-2">
-                              <div className="bg-[#ffffffcf] rounded-l-[4px] w-[8px] "></div>
+                              <div
+                                className={`bg-[#ffffffcf] ${
+                                  msg.sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
+                                }  w-[8px] `}
+                              ></div>
                               <div className="pb-2">
                                 {msg.reply_sender?.id === currentUserID?.id ? (
                                   <p className="mt-2 text-[12px]">You</p>
@@ -769,7 +805,7 @@ function ChatArea({ user, onSelect }) {
                           )}
                         </span>
                       )}
-                      <span className="pr-20 text-[14px]">{msg.content}</span>
+                      <span className="pr-20 pl-2 pt-1 text-[14px]">{msg.content}</span>
                     </span>
                     <span
                       className={`absolute bottom-1 ${
