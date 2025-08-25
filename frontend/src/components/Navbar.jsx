@@ -6,6 +6,7 @@ import { GetValidAccessToken, logout } from "./index";
 import { faUserPlus, faInbox } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
 import { getFriends } from "./ChatList";
+import chatHubLogo from "../assets/chat-hub-logo-2.png";
 
 function Navbar({ onSelect }) {
   const [showModal, setShowModal] = useState(null);
@@ -115,7 +116,8 @@ function Navbar({ onSelect }) {
 
   return (
     <nav className=" bg-[#0104099e] text-[#e8e8e8e0] flex flex-row justify-between pt-[.5rem] pb-[.5rem] pr-[1rem] pl-[1rem] border-1 border-b-0 border-[var(--border)] items-center rounded-t-lg">
-      <div>
+      <div className="flex items-center gap-2">
+        <img src={chatHubLogo} alt="..." className="h-[35px] rounded-[50%]" />
         <h3 className="text-2xl font-bold font-sans">Chat Hub</h3>
       </div>
       <div className="flex text-[#e8e8e8e0] gap-[2rem] items-center">

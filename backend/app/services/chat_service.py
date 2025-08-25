@@ -357,6 +357,24 @@ async def get_messages(db, chat_id):
                 }
             )
 
+        if m.reply_to != None:
+
+            reply_message = db.query(Message).filter(
+                Message.id == m.reply_to).one_or_none()
+
+            if reply_message:
+                base_data.update({
+                    "reply_to": m.reply_to,
+                    "reply_content": reply_message.content,
+                    "reply_file_name": reply_message.file_name,
+                    "reply_file_url": reply_message.file_url,
+                    "reply_file_type": reply_message.file_type,
+                    "reply_sender": {
+                        "id": reply_message.sender.id,
+                        "name": reply_message.sender.name,
+                    }
+                })
+
         formatted_messages.append(base_data)
 
     return {

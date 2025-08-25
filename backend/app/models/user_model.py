@@ -75,6 +75,7 @@ class Message(Base):
     file_type = Column(String, nullable=True)
     file_size = Column(String, nullable=True)
     is_deleted = Column(Boolean, default=False)
+    reply_to = Column(UUID, ForeignKey("messages.id"), nullable=True)
     sender = relationship('Users', back_populates='messages')
 
 

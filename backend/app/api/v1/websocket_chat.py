@@ -106,19 +106,56 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
             else:
 
-                new_message = Message(
-                    chat_id=chat_id,
-                    sender_id=current_user.id,
-                    content=content
-                )
+                reply_to = data.get('reply_to')
+                brodcast_message = {}
+                if reply_to:
+                    new_message = Message(
+                        chat_id=chat_id,
+                        sender_id=current_user.id,
+                        content=content,
+                        reply_to=reply_to
+                    )
 
-                db.add(new_message)
-                db.commit()
-                db.refresh(new_message)
+                    db.add(new_message)
+                    db.commit()
+                    db.refresh(new_message)
 
-                await manager.broadcast(
-                    chat_id,
-                    {"type": message_type,
+                    reply_message = db.query(Message).filter(
+                        Message.id == reply_to).one_or_none()
+
+                    if reply_message:
+                        brodcast_message.update({
+                            "type": message_type,
+                            "id": str(new_message.id),
+                            "sender_id": current_user.id,
+                            "sender": current_user.name,
+                            "content": content,
+                            "sent_at": new_message.sent_at.strftime("%I:%M %p"),
+                            "sent_time": new_message.sent_at.strftime("%I:%M %p"),
+                            "is_read": new_message.is_read,
+                            "is_deleted": new_message.is_deleted,
+                            "reply_to": str(new_message.reply_to),
+                            "reply_content": reply_message.content,
+                            "reply_file_name": reply_message.file_name,
+                            "reply_file_url": reply_message.file_url,
+                            "reply_file_type": reply_message.file_type,
+                            "reply_sender": {
+                                "id": reply_message.sender.id,
+                                "name": reply_message.sender.name,
+                            }
+                        })
+                else:
+                    new_message = Message(
+                        chat_id=chat_id,
+                        sender_id=current_user.id,
+                        content=content
+                    )
+                    db.add(new_message)
+                    db.commit()
+                    db.refresh(new_message)
+
+                    brodcast_message.update({
+                        "type": message_type,
                         "id": str(new_message.id),
                         "sender_id": current_user.id,
                         "sender": current_user.name,
@@ -126,8 +163,16 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                         "sent_at": new_message.sent_at.strftime("%I:%M %p"),
                         "sent_time": new_message.sent_at.strftime("%I:%M %p"),
                         "is_read": new_message.is_read,
-                        "is_deleted": new_message.is_deleted
-                     }
+                        "is_deleted": new_message.is_deleted,
+                    })
+
+                db.add(new_message)
+                db.commit()
+                db.refresh(new_message)
+
+                await manager.broadcast(
+                    chat_id,
+                    brodcast_message
                 )
     except WebSocketDisconnect:
         await manager.disconnect(

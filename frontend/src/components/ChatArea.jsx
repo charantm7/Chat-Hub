@@ -60,7 +60,7 @@ function ChatArea({ user, onSelect }) {
     y: 0,
     msgId: null,
   });
-  console.log("reply", replyMessage);
+  console.log("reply", messages);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -258,10 +258,12 @@ function ChatArea({ user, onSelect }) {
     const newMsg = {
       id: "temp-" + crypto.randomUUID(),
       sender_id: currentUserID?.id,
+      sender: currentUserID?.name,
       content: input,
       chat_id: user?.chat_id,
       sent_at: new Date().toISOString(),
       is_deleted: false,
+      reply_to: replyMessage?.replyMsgId || false,
     };
 
     setMessages((prev) => {
@@ -277,8 +279,10 @@ function ChatArea({ user, onSelect }) {
         JSON.stringify({
           data: input,
           type: "message",
+          reply_to: replyMessage?.replyMsgId || false,
         })
       );
+      setReplyMessage(null);
 
       socketRef.current.send(
         JSON.stringify({
@@ -512,9 +516,9 @@ function ChatArea({ user, onSelect }) {
     }
   }
 
-  const getContextMenuXY = (clickX, ClickY) => {
+  const getContextMenuXY = (clickX, clickY) => {
     let x = clickX;
-    let y = clickX;
+    let y = clickY;
 
     const menuWidth = 73.8;
     const menuHeight = 180;
@@ -571,7 +575,7 @@ function ChatArea({ user, onSelect }) {
             {msg.is_deleted ? (
               <p
                 className={`relative inline-block text center min-w-[12%] max-w-[70%] ${
-                  msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                  msg.sender_id === currentUserID?.id ? "bg-[#06776e] text-left" : "bg-gray-700"
                 } text-white p-2 rounded-[7px] break-words`}
               >
                 <span className="flex items-center gap-2">
@@ -585,7 +589,7 @@ function ChatArea({ user, onSelect }) {
                   msg.file_type.startsWith("image/") ? (
                     <div
                       className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                        msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                        msg.sender_id === currentUserID?.id ? "bg-[#06776e]  text-left" : "bg-gray-700"
                       } text-white p-[2px] rounded-[7px] break-words`}
                       onContextMenu={(e) => {
                         e.preventDefault();
@@ -602,7 +606,7 @@ function ChatArea({ user, onSelect }) {
                       }}
                     >
                       <a href={msg.file_url}>
-                        <img src={msg.file_url} alt={msg.file_name} className="max-h-40 rounded-md border" />
+                        <img src={msg.file_url} alt={msg.file_name} className="max-h-40 rounded-md " />
                         <span
                           className={`absolute bottom-1 ${
                             msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
@@ -633,7 +637,7 @@ function ChatArea({ user, onSelect }) {
                   ) : (
                     <div
                       className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                        msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
+                        msg.sender_id === currentUserID?.id ? "bg-[#06776e]  text-left" : "bg-gray-700"
                       } text-white pr-2 pl-2 pt-2 pb-[30px] rounded-[7px] break-words`}
                       onContextMenu={(e) => {
                         e.preventDefault();
@@ -646,13 +650,14 @@ function ChatArea({ user, onSelect }) {
                           file_type: msg.file_type,
                           file_url: msg.file_url,
                           file_name: msg.file_name,
+                          file_size: msg.size,
                         });
                       }}
                     >
                       <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
                         <div
                           className={`rounded-[5px] p-2 flex gap-2 items-center  ${
-                            msg.sender_id === currentUserID?.id ? "bg-blue-800" : "bg-gray-600"
+                            msg.sender_id === currentUserID?.id ? "bg-[#045b54] " : "bg-gray-600"
                           }`}
                         >
                           <FileIcons type={msg.file_type} size={28} className="text-white" />
@@ -692,10 +697,10 @@ function ChatArea({ user, onSelect }) {
                     </div>
                   )
                 ) : (
-                  <p
+                  <div
                     className={`relative inline-block min-w-[12%] max-w-[70%] ${
-                      msg.sender_id === currentUserID?.id ? "bg-blue-600 text-left" : "bg-gray-700"
-                    } text-white pr-4 pl-4 pt-2 pb-[26px] rounded-[7px] break-words`}
+                      msg.sender_id === currentUserID?.id ? "bg-[#06776e] text-left" : "bg-gray-700"
+                    } text-white pr-2 pl-2 pt-2 pb-[15px] rounded-[7px] `}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       const { x, y } = getContextMenuXY(e.pageX, e.pageY);
@@ -708,7 +713,64 @@ function ChatArea({ user, onSelect }) {
                       });
                     }}
                   >
-                    {msg.content}
+                    {" "}
+                    <span className="flex flex-col gap-1">
+                      {msg.reply_to && (
+                        <span
+                          className={`rounded-md flex ${
+                            msg.sender_id === currentUserID?.id ? "bg-[#045b54] " : "bg-gray-600"
+                          }`}
+                        >
+                          {msg.reply_file_url ? (
+                            msg.reply_file_type.startsWith("image/") ? (
+                              <div className="flex w-[100%] gap-2">
+                                <div className="bg-[#ffffffcf] rounded-l-[4px] w-[8px] "></div>
+                                <div className="flex justify-between gap-2 w-[100%]">
+                                  {msg.reply_sender?.id === currentUserID?.id ? (
+                                    <p className="mt-2 text-[12px]">You</p>
+                                  ) : (
+                                    <p className="mt-2 text-[12px]">{msg.reply_sender?.name}</p>
+                                  )}
+                                  <img
+                                    src={msg.reply_file_url}
+                                    alt={msg.reply_file_name}
+                                    className="max-h-15 rounded-md"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex gap-2">
+                                <div className="bg-[#ffffffcf] rounded-l-[4px] w-[8px] "></div>
+                                <div>
+                                  {msg.reply_sender?.id === currentUserID?.id ? (
+                                    <p className="mt-2 text-[12px]">You</p>
+                                  ) : (
+                                    <p className="mt-2 text-[12px]">{msg.reply_sender?.name}</p>
+                                  )}
+                                  <div className="flex items-center">
+                                    <FileIcons type={msg.reply_file_type} size={23} className="text-white" />
+                                    <span className="p-2 text-[14px]">{msg.reply_file_name}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          ) : (
+                            <div className="flex gap-2">
+                              <div className="bg-[#ffffffcf] rounded-l-[4px] w-[8px] "></div>
+                              <div>
+                                {msg.reply_sender?.id === currentUserID?.id ? (
+                                  <p className="mt-2 text-[12px]">You</p>
+                                ) : (
+                                  <p className="mt-2 text-[12px]">{msg.reply_sender?.name}</p>
+                                )}
+                                <span className="pr-2 text-[14px]">{msg.reply_content}</span>
+                              </div>
+                            </div>
+                          )}
+                        </span>
+                      )}
+                      <span className="pr-18">{msg.content}</span>
+                    </span>
                     <span
                       className={`absolute bottom-1 ${
                         msg.sender_id === currentUserID?.id ? "right-7" : "right-2"
@@ -730,7 +792,7 @@ function ChatArea({ user, onSelect }) {
                         )}
                       </>
                     )}
-                  </p>
+                  </div>
                 )}
               </>
             )}
@@ -741,37 +803,82 @@ function ChatArea({ user, onSelect }) {
 
       {/* Input Area */}
       <div className="flex flex-col">
-        {replyMessage?.replyFileUrl ? (
-          replyMessage.replyFileType.startsWith("image/") ? (
-            <div className="text-white flex rounded-t-md p-2 bg-[#01040963]">
-              <div className="flex w-[100%]  rounded-md justify-between items-center-safe gap-10 bg-[#ffffff1d]">
-                <div className="flex h-[100%]">
-                  <div className="bg-white w-[7px] rounded-l-md"></div>
-                  <p className="flex flex-col gap-2 p-3">
-                    <span>Reply</span>
-                    {replyMessage.replyFileName}
-                  </p>
+        {replyMessage && (
+          <>
+            {replyMessage.replyFileUrl ? (
+              replyMessage.replyFileType.startsWith("image/") ? (
+                <div className="text-white flex animate-slideUp duration-200 rounded-t-md p-2 bg-[#01040963]">
+                  <div className="flex w-[100%]  rounded-md justify-between items-center-safe gap-10 bg-[#ffffff1d]">
+                    <div className="flex h-[100%]">
+                      <div className="bg-white w-[7px] rounded-l-md"></div>
+                      <p className="flex flex-col gap-2 p-3">
+                        <span>Reply</span>
+                        {replyMessage.replyFileName}
+                      </p>
+                    </div>
+                    <div className="flex gap-6 p-3">
+                      <img
+                        src={replyMessage.replyFileUrl}
+                        alt={replyMessage.replyFileName}
+                        className="max-h-20 rounded-md border"
+                      />
+                      <button
+                        className="cursor-pointer bg-[#fff] h-[100%] w-[23px] justify-center text-black flex items-center rounded-[50%]"
+                        onClick={() => setReplyMessage(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-6 p-3">
-                  <img
-                    src={replyMessage.replyFileUrl}
-                    alt={replyMessage.replyFileName}
-                    className="max-h-20 rounded-md border"
-                  />
+              ) : (
+                <div className="text-white flex animate-slideUp duration-200 rounded-t-md p-2 bg-[#01040963]">
+                  <div className="flex w-[100%]  rounded-md justify-between items-center-safe gap-10 bg-[#ffffff1d]">
+                    <div className="flex h-[100%]">
+                      <div className="bg-white w-[7px] rounded-l-md"></div>
+                      <p className="flex flex-col gap-2 p-3">
+                        <span>Reply</span>
+
+                        <span className="flex items-center gap-3 text-[14px]">
+                          <FileIcons type={replyMessage.replyFileType} size={25} className="text-white" />
+                          {replyMessage.replyFileName} - {formatFileSize(Number(replyMessage.replyFileSize))}
+                        </span>
+                      </p>
+                    </div>
+
+                    <button
+                      className="cursor-pointer bg-[#fff] h-[25px] w-[23px] justify-center text-black flex items-center rounded-[50%] mr-2 mb-8"
+                      onClick={() => setReplyMessage(null)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="text-white flex animate-slideUp duration-200 rounded-t-md p-2 bg-[#01040963]">
+                <div className="flex w-[100%]  rounded-md justify-between items-center-safe gap-10 bg-[#ffffff1d]">
+                  <div className="flex h-[100%]">
+                    <div className="bg-white w-[7px] rounded-l-md"></div>
+                    <p className="flex flex-col gap-2 p-3">
+                      <span>Reply</span>
+
+                      <span className="flex items-center gap-3 text-[14px]">
+                        {replyMessage.replyMsgContent}
+                      </span>
+                    </p>
+                  </div>
+
                   <button
-                    className="cursor-pointer bg-[#fff] h-[100%] w-[23px] justify-center text-black flex items-center rounded-[50%]"
+                    className="cursor-pointer bg-[#fff] h-[25px] w-[23px] justify-center text-black flex items-center rounded-[50%] mr-2 mb-8"
                     onClick={() => setReplyMessage(null)}
                   >
                     ✕
                   </button>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div></div>
-          )
-        ) : (
-          <div></div>
+            )}
+          </>
         )}
         <div className="flex w-full bg-[#01040963] items-center text-[#e8e8e8e0] pr-4 pl-4 gap-4 border-t border-[var(--border-2)]">
           <FontAwesomeIcon icon={faFaceSmile} className="text-[20px]" />
@@ -878,10 +985,11 @@ function ChatArea({ user, onSelect }) {
             onClick={() =>
               setReplyMessage({
                 replyMsgId: contextMenu.msgId,
-                replyFileUrl: `${contextMenu.file_url ? contextMenu.file_url : null}`,
-                replyFileType: `${contextMenu.file_type ? contextMenu.file_type : null}`,
-                replyFileName: `${contextMenu.file_name ? contextMenu.file_name : null}`,
-                replMsgContent: `${contextMenu.msgInfo ? contextMenu.msgInfo : null}`,
+                replyFileUrl: contextMenu.file_url || null,
+                replyFileType: contextMenu.file_type || null,
+                replyFileName: contextMenu.file_name || null,
+                replyFileSize: contextMenu.file_size || null,
+                replyMsgContent: contextMenu.msgInfo || null,
               })
             }
           >
