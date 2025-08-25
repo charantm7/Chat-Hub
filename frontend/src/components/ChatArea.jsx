@@ -54,12 +54,13 @@ function ChatArea({ user, onSelect }) {
   const [file, setFile] = useState(null);
   const fileInputRef = useRef(null);
   const [editContent, setEditContent] = useState(null);
+  const [replyMessage, setReplyMessage] = useState(null);
   const [contextMenu, setContextMenu] = useState({
     x: 0,
     y: 0,
     msgId: null,
   });
-  console.log("context menu", contextMenu);
+  console.log("reply", replyMessage);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -516,7 +517,7 @@ function ChatArea({ user, onSelect }) {
     let y = clickX;
 
     const menuWidth = 73.8;
-    const menuHeight = 144;
+    const menuHeight = 180;
 
     if (x + menuWidth > window.innerWidth) {
       x = window.innerWidth - menuWidth - 10;
@@ -594,6 +595,9 @@ function ChatArea({ user, onSelect }) {
                           y,
                           msgId: msg.id,
                           senderId: msg.sender_id,
+                          file_type: msg.file_type,
+                          file_url: msg.file_url,
+                          file_name: msg.file_name,
                         });
                       }}
                     >
@@ -639,6 +643,9 @@ function ChatArea({ user, onSelect }) {
                           y,
                           msgId: msg.id,
                           senderId: msg.sender_id,
+                          file_type: msg.file_type,
+                          file_url: msg.file_url,
+                          file_name: msg.file_name,
                         });
                       }}
                     >
@@ -697,6 +704,7 @@ function ChatArea({ user, onSelect }) {
                         y,
                         msgId: msg.id,
                         senderId: msg.sender_id,
+                        msgInfo: msg.content,
                       });
                     }}
                   >
@@ -732,35 +740,69 @@ function ChatArea({ user, onSelect }) {
       </div>
 
       {/* Input Area */}
-      <div className="flex w-full bg-[#01040963] items-center text-[#e8e8e8e0] pr-4 pl-4 gap-4 border-t border-[var(--border-2)]">
-        <FontAwesomeIcon icon={faFaceSmile} className="text-[20px]" />
-        <input
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            handleMessageChange(e);
-          }}
-          onKeyDown={handleKeyPress}
-          placeholder="Write a message..."
-          className="w-full h-[4rem] outline-0 bg-transparent text-white"
-        />
-        <label className="flex items-center cursor-pointer">
-          <FontAwesomeIcon icon={faPaperclip} className="text-[20px]" />
+      <div className="flex flex-col">
+        {replyMessage?.replyFileUrl ? (
+          replyMessage.replyFileType.startsWith("image/") ? (
+            <div className="text-white flex rounded-t-md p-2 bg-[#01040963]">
+              <div className="flex w-[100%]  rounded-md justify-between items-center-safe gap-10 bg-[#ffffff1d]">
+                <div className="flex h-[100%]">
+                  <div className="bg-white w-[7px] rounded-l-md"></div>
+                  <p className="flex flex-col gap-2 p-3">
+                    <span>Reply</span>
+                    {replyMessage.replyFileName}
+                  </p>
+                </div>
+                <div className="flex gap-6 p-3">
+                  <img
+                    src={replyMessage.replyFileUrl}
+                    alt={replyMessage.replyFileName}
+                    className="max-h-20 rounded-md border"
+                  />
+                  <button
+                    className="cursor-pointer bg-[#fff] h-[100%] w-[23px] justify-center text-black flex items-center rounded-[50%]"
+                    onClick={() => setReplyMessage(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div></div>
+          )
+        ) : (
+          <div></div>
+        )}
+        <div className="flex w-full bg-[#01040963] items-center text-[#e8e8e8e0] pr-4 pl-4 gap-4 border-t border-[var(--border-2)]">
+          <FontAwesomeIcon icon={faFaceSmile} className="text-[20px]" />
           <input
-            type="file"
-            className="hidden"
+            value={input}
             onChange={(e) => {
-              const selectfile = e.target.files[0];
-              if (selectfile) {
-                setFile(selectfile);
-                setShowModal("file");
-              }
-              e.target.value = "";
+              setInput(e.target.value);
+              handleMessageChange(e);
             }}
+            onKeyDown={handleKeyPress}
+            placeholder="Write a message..."
+            className="w-full h-[4rem] outline-0 bg-transparent text-white"
           />
-        </label>
+          <label className="flex items-center cursor-pointer">
+            <FontAwesomeIcon icon={faPaperclip} className="text-[20px]" />
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                const selectfile = e.target.files[0];
+                if (selectfile) {
+                  setFile(selectfile);
+                  setShowModal("file");
+                }
+                e.target.value = "";
+              }}
+            />
+          </label>
 
-        <FontAwesomeIcon icon={faMicrophone} className="text-[20px]" />
+          <FontAwesomeIcon icon={faMicrophone} className="text-[20px]" />
+        </div>
       </div>
       {showModal == "account" && (
         <div
@@ -831,6 +873,20 @@ function ChatArea({ user, onSelect }) {
               </li>
             </div>
           )}
+          <li
+            className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+            onClick={() =>
+              setReplyMessage({
+                replyMsgId: contextMenu.msgId,
+                replyFileUrl: `${contextMenu.file_url ? contextMenu.file_url : null}`,
+                replyFileType: `${contextMenu.file_type ? contextMenu.file_type : null}`,
+                replyFileName: `${contextMenu.file_name ? contextMenu.file_name : null}`,
+                replMsgContent: `${contextMenu.msgInfo ? contextMenu.msgInfo : null}`,
+              })
+            }
+          >
+            Reply
+          </li>
           <li
             className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
             onClick={() => handleSelect(contextMenu.msgId)}
