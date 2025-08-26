@@ -174,20 +174,20 @@ const ChatList = ({ onSelect, selectedUser }) => {
 
   return (
     <div className="flex text-[#e8e8e8e0] flex-col w-[25%] border-r-1 border-[var(--border)]  ">
-      <div className="flex flex-col w-[100%] gap-3 p-[1rem]">
+      <div className="flex flex-col w-[100%] gap-4 p-[1rem]">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search"
-          className="bg-[#15191fd1] border-1 outline-0 h-[2.5rem] rounded-[20px] border-[var(--border)] text-md pl-4 pr-2"
+          className="bg-[#15191fd1] border-1 outline-0 h-[2.5rem] rounded-[10px] border-[var(--border)] text-md pl-4 pr-2"
         />
         <div className="flex w-[100%] justify-between items-center ">
           <div className="flex items-center gap-3 ">
             <button
               onClick={() => setFilter("all")}
               type="button"
-              className={`text-sm  border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[20px] cursor-pointer ${
+              className={`text-sm  border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[10px] cursor-pointer ${
                 filter === "all" ? "bg-[#ffffff33]" : "bg-0"
               }`}
             >
@@ -196,7 +196,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
             <button
               onClick={() => setFilter("unread")}
               type="button"
-              className={`text-sm cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[20px] ${
+              className={`text-sm cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[10px] ${
                 filter === "unread" ? "bg-[#ffffff33]" : "bg-0"
               }`}
             >
@@ -205,7 +205,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
             <button
               onClick={() => setFilter("groups")}
               type="button"
-              className={`text-sm cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[20px] ${
+              className={`text-sm cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[10px] ${
                 filter === "groups" ? "bg-[#ffffff33]" : "bg-0"
               }`}
             >
@@ -216,7 +216,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
           <FontAwesomeIcon
             onClick={() => setShowModal("add")}
             icon={faPenToSquare}
-            className="text-sm border-1 border-[var(--border)] pt-2 pb-2 pr-3 pl-3 rounded-[20px]"
+            className="text-sm border-1 border-[var(--border)] pt-2 pb-2 pr-3 pl-3 rounded-[10px]"
           />
         </div>
       </div>
