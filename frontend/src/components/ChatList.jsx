@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { GetValidAccessToken, GetAllUsers } from "./index";
+import GroupProfile from "../assets/group-profile.jpg";
 
 export async function getFriends(token) {
   const response = await fetch("http://127.0.0.1:8000/v1/chat/friends", {
@@ -28,6 +29,8 @@ const ChatList = ({ onSelect, selectedUser }) => {
   const [users, setUsers] = useState([]);
   const [request, setRequest] = useState({});
   const [search, setSearch] = useState("");
+  const [addUserToGroup, setAddUserToGroup] = useState({});
+  const [groupName, setGroupName] = useState("");
 
   const truncated = (message) => {
     if (!message) return;
@@ -103,14 +106,18 @@ const ChatList = ({ onSelect, selectedUser }) => {
   const handleOverlayClick = (e) => {
     if (e.target.id === "overlay") {
       setShowModal(false);
+      setGroupName("");
+      if (Object.keys(addUserToGroup)) {
+        setAddUserToGroup({});
+      }
     }
   };
 
   const filterFriends = friends.filter((friend) => {
-    const matchfilter = filter === "unread" ? friend.unread > 0 : true;
-    const matchsearch = friend.name.toLowerCase().includes(search.toLowerCase());
-
-    return matchfilter && matchsearch;
+    if (filter === "unread" && friend.unread <= 0) return false;
+    if (filter === "groups" && !friend.is_group) return false;
+    if (!friend.name?.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
   });
 
   useEffect(() => {
@@ -129,6 +136,41 @@ const ChatList = ({ onSelect, selectedUser }) => {
 
     loadUser();
   }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+
+    Object.values(addUserToGroup).forEach((user) => {
+      formData.append("member_ids", user.id);
+    });
+
+    if (groupName) {
+      formData.append("name", groupName);
+    } else return;
+
+    try {
+      const token = await GetValidAccessToken();
+
+      const req = await fetch(`http://127.0.0.1:8000/v1/chat/create/group`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!req.ok) throw new Error("create group request failed");
+
+      const data = await req.json();
+      console.log("Group created:", data);
+
+      setAddUserToGroup({});
+      setGroupName("");
+      setShowModal(false);
+    } catch (error) {}
+  };
 
   return (
     <div className="flex text-[#e8e8e8e0] flex-col w-[25%] border-r-1 border-[var(--border)]  ">
@@ -161,8 +203,11 @@ const ChatList = ({ onSelect, selectedUser }) => {
               Unread
             </button>
             <button
+              onClick={() => setFilter("groups")}
               type="button"
-              className="text-sm border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[20px]"
+              className={`text-sm cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[20px] ${
+                filter === "groups" ? "bg-[#ffffff33]" : "bg-0"
+              }`}
             >
               Group
             </button>
@@ -198,12 +243,22 @@ const ChatList = ({ onSelect, selectedUser }) => {
                 selectedUser === friend ? "bg-[#ffffff15]" : "bg-0"
               }`}
             >
-              <img
-                src={friend.picture}
-                alt="..."
-                referrerPolicy="no-referrer"
-                className="rounded-[50%] w-[40px] h-[40px]"
-              />
+              {friend.picture ? (
+                <img
+                  src={friend.picture}
+                  alt="..."
+                  referrerPolicy="no-referrer"
+                  className="rounded-[50%] w-[40px] h-[40px]"
+                />
+              ) : (
+                <img
+                  src={GroupProfile}
+                  alt="..."
+                  referrerPolicy="no-referrer"
+                  className="rounded-[50%] w-[40px] h-[40px]"
+                />
+              )}
+
               <div className="flex flex-col w-[100%] ml-1 gap-1">
                 <p>{friend.name}</p>
                 <small className="opacity-70">{truncated(friend?.last_message)}</small>
@@ -236,7 +291,10 @@ const ChatList = ({ onSelect, selectedUser }) => {
             >
               Add Friends
             </p>
-            <p className="cursor-pointer hover:text-white hover:bg-[#ffffff15] p-2 rounded-md">
+            <p
+              onClick={() => setShowModal("addgroup")}
+              className="cursor-pointer hover:text-white hover:bg-[#ffffff15] p-2 rounded-md"
+            >
               Create Group
             </p>
           </div>
@@ -248,14 +306,15 @@ const ChatList = ({ onSelect, selectedUser }) => {
           onClick={handleOverlayClick}
           className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex justify-center items-center z-50"
         >
-          <div className="bg-opacity-50 w-[30%] h-[80%] absolute left-[35%] top-[8%] flex flex-col gap-5  p-6 bg-[#fffc] items-center text-[#000000d6] border-1 border-[#ffffff34] rounded-xl">
+          <div className="bg-opacity-50 w-[30%] h-[80%] absolute left-[35%] top-[8%] flex flex-col gap-5   p-4 bg-gray-800 items-center text-[#fff] border-1 border-[#ffffff34] rounded-xl">
+            <p className="flex font-semibold text-[17px] w-[100%]">Add User</p>
             <div className="flex w-[100%]">
               <input
                 type="search"
                 name="user"
                 id="user"
                 placeholder="search"
-                className="border-1 w-[100%] h-10 pr-3 pl-5 outline-0 rounded-3xl"
+                className="border-1 w-[100%] h-10 pr-3 pl-5 outline-0 border-[#ffffff70] rounded-md"
               />
             </div>
             <div className="flex flex-col w-[100%]">
@@ -283,6 +342,96 @@ const ChatList = ({ onSelect, selectedUser }) => {
                         Requested
                       </button>
                     ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      {showModal == "addgroup" && (
+        <div
+          id="overlay"
+          onClick={handleOverlayClick}
+          className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex justify-center items-center z-50"
+        >
+          <div className="bg-opacity-50 w-[30%] h-[80%] absolute left-[35%] top-[8%] flex flex-col gap-5  p-4 bg-gray-800 items-center text-[#fff] border-1 border-[#ffffff34] rounded-xl">
+            <p className="flex font-semibold text-[17px] w-[100%]">New Group</p>
+            <div className="flex w-[100%] gap-3">
+              <input
+                type="text"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+                placeholder="Group name*"
+                className="border-1 border-[#ffffff8f] w-[100%] h-10 pr-3 pl-5 outline-0 rounded-md"
+              />
+              <button
+                onClick={(e) => handleSubmit(e)}
+                className="cursor-pointer hover:bg-blue-600 bg-blue-500 rounded-md pr-3 pl-3"
+              >
+                Create
+              </button>
+            </div>
+            {addUserToGroup ? (
+              <div className=" flex w-[100%] gap-2">
+                {Object.values(addUserToGroup).map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center gap-2  pr-2 pl-2 pt-1 pb-1 rounded-md bg-[#ffffff2f]"
+                  >
+                    <span>{user.name}</span>
+                    <button
+                      onClick={() =>
+                        setAddUserToGroup((prev) => {
+                          const newState = { ...prev };
+                          delete newState[user.id];
+                          return newState;
+                        })
+                      }
+                      className="text-red-500 cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <div className="flex flex-col w-[100%]">
+              {friends.map((friend) => {
+                return (
+                  <div key={friend.id} className="flex w-[100%] items-center pt-2 pb-2 gap-2">
+                    <img src={friend.picture} alt="..." className="rounded-[50%] w-[40px] h-[40px]" />
+                    <div className="flex flex-col w-[100%] ml-1 gap-1">
+                      <p>{friend.name}</p>
+                    </div>
+                    {addUserToGroup[friend.id] ? (
+                      <button
+                        onClick={() => {
+                          setAddUserToGroup((prev) => {
+                            const newState = { ...prev };
+                            delete newState[friend.id];
+                            return newState;
+                          });
+                        }}
+                        type="button"
+                        className="w-[10rem] pt-[6px] pb-[6px] pr-2 pl-2 bg-blue-500 cursor-pointer hover:bg-blue-700 text-white rounded-md text-[14px]"
+                      >
+                        remove
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() =>
+                          setAddUserToGroup((prev) => ({
+                            ...prev,
+                            [friend.id]: { id: friend.id, name: friend.name },
+                          }))
+                        }
+                        type="button"
+                        className="w-[10rem] pt-[6px] pb-[6px] pr-2 pl-2 bg-blue-500 cursor-pointer hover:bg-blue-700 text-white rounded-md text-[14px]"
+                      >
+                        add
+                      </button>
+                    )}
                   </div>
                 );
               })}

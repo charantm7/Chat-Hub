@@ -196,7 +196,7 @@ async def reject_friend_request(db, current_user, id):
     }
 
 
-async def get_accepted_friends(db, current_user):
+async def get_accepted_friends(db: Session, current_user):
 
     accepted_friends = db.query(FriendRequest).filter(
         FriendRequest.status == RequestStatus.accepted,
@@ -206,7 +206,31 @@ async def get_accepted_friends(db, current_user):
         )
     ).all()
 
+    groups = db.query(Chats).join(ChatMembers, Chats.id == ChatMembers.chat_id).filter(
+        ChatMembers.user_id == current_user.id, Chats.is_group == True).all()
+
     friends = []
+
+    if groups:
+
+        for group in groups:
+
+            unread = db.query(Message).filter(
+                Message.chat_id == group.id,
+                Message.sender_id != current_user.id,
+                Message.is_read == False
+
+            ).count()
+            if not unread:
+                unread = 0
+
+            friends.append({
+                "chat_id": group.id,
+                "name": group.name,
+                "last_message_time": datetime(1970, 1, 1, tzinfo=timezone.utc),
+                "unread": unread,
+                "is_group": True
+            })
 
     chat_member_1 = aliased(ChatMembers)
     chat_member_2 = aliased(ChatMembers)
@@ -258,7 +282,8 @@ async def get_accepted_friends(db, current_user):
             "chat_id": chat.id if chat else None,
             "last_message_time": last_message_time,
             "last_message": last_message,
-            "unread": unread
+            "unread": unread,
+            "is_group": False
         })
 
         friends.sort(
@@ -342,7 +367,9 @@ async def get_messages(db, chat_id):
             "sent_time": m.sent_at.astimezone(ist).strftime("%I:%M %p"),
             "is_read": m.is_read,
             "sender": m.sender,
-            "is_deleted": m.is_deleted
+            "is_deleted": m.is_deleted,
+            "is_group": m.is_group,
+
 
         }
         if m.file_name is None:

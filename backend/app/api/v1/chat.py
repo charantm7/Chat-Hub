@@ -132,7 +132,7 @@ async def mark_read_messages(chat_id: UUID, current_user: Users = Depends(user_s
 
 
 @chat.post('/file/upload')
-async def file_upload(request: Request, sender_id: int = Form(...), chat_id: UUID = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def file_upload(request: Request, sender_id: int = Form(...), chat_id: UUID = Form(...), is_group: bool = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
 
     max_size = 50 * 1024 * 1024
     size = 0
@@ -155,7 +155,7 @@ async def file_upload(request: Request, sender_id: int = Form(...), chat_id: UUI
     print(file_url)
 
     new_message = Message(sender_id=sender_id, chat_id=chat_id,
-                          file_url=file_url, file_name=file.filename, file_size=size, unique_name=file_name, file_type=mime_type)
+                          file_url=file_url, file_name=file.filename, file_size=size, unique_name=file_name, file_type=mime_type, is_group=is_group)
 
     db.add(new_message)
     db.commit()
@@ -166,7 +166,9 @@ async def file_upload(request: Request, sender_id: int = Form(...), chat_id: UUI
         "file_type": new_message.file_type,
         "file_name": new_message.file_name,
         "unique_name": new_message.unique_name,
-        "size": new_message.file_size
+        "size": new_message.file_size,
+        "is_group": new_message.is_group,
+        "sender": new_message.sender
     }
 
 
@@ -231,3 +233,23 @@ async def edit_message(message_id: UUID, content: str = Form(...), db: Session =
     })
 
     return {"message": "Message edited successfully"}
+
+
+@chat.post('/create/group')
+async def create_group(name: str = Form(...), member_ids: list[int] = Form(...), db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
+
+    if not name:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='name not provided')
+
+    new_group = Chats(name=name, is_group=True)
+    db.add(new_group)
+    db.commit()
+    db.refresh(new_group)
+
+    member_ids.append(current_user.id)
+    for id in member_ids:
+        db.add(ChatMembers(user_id=id, chat_id=new_group.id))
+    db.commit()
+
+    return {"chat_id": str(new_group.id), "name": new_group.name}

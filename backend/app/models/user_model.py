@@ -52,7 +52,7 @@ class ChatMembers(Base):
 
     id = Column(UUID, primary_key=True, default=uuid4, unique=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
-    chat_id = Column(UUID, ForeignKey('chats.id'))
+    chat_id = Column(UUID, ForeignKey('chats.id', ondelete='CASCADE'))
     joined_at = Column(TIMESTAMP(timezone=True),
                        server_default=text('now()'), nullable=False)
 
@@ -61,7 +61,7 @@ class Message(Base):
     __tablename__ = 'messages'
 
     id = Column(UUID, primary_key=True, default=uuid4, unique=True)
-    chat_id = Column(UUID, ForeignKey("chats.id"))
+    chat_id = Column(UUID, ForeignKey("chats.id", ondelete='CASCADE'))
     sender_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
     content = Column(Text, nullable=True)
     sent_at = Column(TIMESTAMP(timezone=True),
@@ -77,6 +77,7 @@ class Message(Base):
     is_deleted = Column(Boolean, default=False)
     reply_to = Column(UUID, ForeignKey("messages.id"), nullable=True)
     sender = relationship('Users', back_populates='messages')
+    is_group = Column(Boolean, nullable=True, default=False)
 
 
 class FriendRequest(Base):

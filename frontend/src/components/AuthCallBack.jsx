@@ -2,6 +2,16 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
+function requestNotificationPermission() {
+  if ("Notification" in window) {
+    Notification.requestPermission().then((permission) => {
+      if (permission === "granted") {
+        console.log("Notification permission granted.");
+      }
+    });
+  }
+}
+
 function AuthCallBack() {
   const navigate = useNavigate();
 
@@ -19,7 +29,7 @@ function AuthCallBack() {
       localStorage.setItem("refresh", refresh);
       localStorage.setItem("accessExpiry", accessExpiry);
       localStorage.setItem("refreshExpiry", refreshExpiry);
-
+      requestNotificationPermission();
       setTimeout(() => navigate("/chat", { replace: true }), 0);
     } else {
       console.error("No token found in URL");

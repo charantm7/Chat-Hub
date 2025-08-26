@@ -93,7 +93,11 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                         {"type": message_type,
                             "id": str(file_message.id),
                             "sender_id": current_user.id,
-                            "sender": current_user.name,
+                            "sender_name": current_user.name,
+                            "sender": {
+                                "name": new_message.sender.name,
+                                "picture": new_message.sender.picture
+                            },
                             "file_name": file_name,
                             "file_url": file_url,
                             "size": size,
@@ -107,13 +111,15 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
             else:
 
                 reply_to = data.get('reply_to')
+                is_group = data.get("is_group")
                 brodcast_message = {}
                 if reply_to:
                     new_message = Message(
                         chat_id=chat_id,
                         sender_id=current_user.id,
                         content=content,
-                        reply_to=reply_to
+                        reply_to=reply_to,
+                        is_group=is_group
                     )
 
                     db.add(new_message)
@@ -128,7 +134,11 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                             "type": message_type,
                             "id": str(new_message.id),
                             "sender_id": current_user.id,
-                            "sender": current_user.name,
+                            "sender_name": current_user.name,
+                            "sender": {
+                                "name": new_message.sender.name,
+                                "picture": new_message.sender.picture
+                            },
                             "content": content,
                             "sent_at": new_message.sent_at.strftime("%I:%M %p"),
                             "sent_time": new_message.sent_at.strftime("%I:%M %p"),
@@ -148,7 +158,8 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                     new_message = Message(
                         chat_id=chat_id,
                         sender_id=current_user.id,
-                        content=content
+                        content=content,
+                        is_group=is_group
                     )
                     db.add(new_message)
                     db.commit()
@@ -158,12 +169,17 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                         "type": message_type,
                         "id": str(new_message.id),
                         "sender_id": current_user.id,
-                        "sender": current_user.name,
+                        "sender_name": current_user.name,
+                        "sender": {
+                            "name": new_message.sender.name,
+                            "picture": new_message.sender.picture
+                        },
                         "content": content,
                         "sent_at": new_message.sent_at.strftime("%I:%M %p"),
                         "sent_time": new_message.sent_at.strftime("%I:%M %p"),
                         "is_read": new_message.is_read,
                         "is_deleted": new_message.is_deleted,
+                        "is_group": is_group
                     })
 
                 db.add(new_message)
