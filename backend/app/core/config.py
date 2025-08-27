@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings
 
 
-
 class Settings(BaseSettings):
 
     # database
@@ -22,6 +21,9 @@ class Settings(BaseSettings):
     CLIENT_ID: str
     REDIRECT_URL: str
 
+    # payment
+    RAZORPAY_KEY_ID: str
+    RAZORPAY_KEY_SECRET: str
 
     class Config:
 

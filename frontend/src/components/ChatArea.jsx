@@ -579,6 +579,373 @@ function ChatArea({ user, onSelect }) {
     return { x, y };
   };
 
+  const ImageMessage = React.memo(
+    ({
+      type,
+      id,
+      sender_id,
+      sender_name,
+      sender_picture,
+      content,
+      sent_at,
+      sent_time,
+      is_read,
+      is_deleted,
+      reply_to,
+      reply_content,
+      reply_file_name,
+      reply_file_type,
+      reply_file_url,
+      is_group,
+      reply_sender_id,
+      reply_sender_name,
+      file_type,
+      file_url,
+      file_name,
+      size,
+      read,
+      isCurrentUser,
+      showAvatar,
+    }) => (
+      <div
+        className={`relative min-w-[20%] max-w-[30%] inline-block  
+                       text-white `}
+      >
+        <div className="flex items-end gap-3">
+          {!isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-8"></div>
+          )}
+          <div
+            className={`w-[100%] ${
+              sender_id === currentUserID?.id
+                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40  border border-white/10 text-white  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+            } text-white p-[2px]  `}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              const { x, y } = getContextMenuXY(e.pageX, e.pageY);
+              setContextMenu({
+                x,
+                y,
+                msgId: id,
+                senderId: sender_id,
+                file_type: file_type,
+                file_url: file_url,
+                file_name: file_name,
+                file_size: size,
+              });
+            }}
+          >
+            <a href={file_url}>
+              <img
+                src={file_url}
+                alt={file_name}
+                className={` ${
+                  sender_id === currentUserID?.id
+                    ? " rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                    : "rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                } `}
+              />
+              <span
+                className={`absolute bottom-1 ${
+                  sender_id === currentUserID?.id ? "right-18" : "right-2"
+                }  text-[11px] text-gray-300 `}
+                style={{ textShadow: "1px 1px 2px black" }}
+              >
+                {sent_time}
+              </span>
+
+              {sender_id === currentUserID?.id && (
+                <>
+                  {read | is_read ? (
+                    <span className="absolute bottom-1 right-14 text-[14px] text-gray-300">
+                      <FontAwesomeIcon icon={faCheckDouble} />
+                    </span>
+                  ) : (
+                    <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                      <FontAwesomeIcon icon={faCheck} />
+                    </span>
+                  )}
+                </>
+              )}
+            </a>
+          </div>
+          {isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-8"></div>
+          )}
+        </div>
+      </div>
+    )
+  );
+  const FileMessage = React.memo(
+    ({
+      type,
+      id,
+      sender_id,
+      sender_name,
+      sender_picture,
+      content,
+      sent_at,
+      sent_time,
+      is_read,
+      is_deleted,
+      reply_to,
+      reply_content,
+      reply_file_name,
+      reply_file_type,
+      reply_file_url,
+      is_group,
+      reply_sender_id,
+      reply_sender_name,
+      file_type,
+      file_url,
+      file_name,
+      size,
+      read,
+      isCurrentUser,
+      showAvatar,
+    }) => (
+      <div
+        className={`relative min-w-[16%] max-w-[70%] inline-block  
+                       text-white `}
+      >
+        <div className={`flex items-end gap-3`}>
+          {!isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-8"></div>
+          )}
+          <div
+            className={`w-[100%] ${
+              sender_id === currentUserID?.id
+                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40  border border-white/10 text-white  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+            } text-white pr-[5px] pl-[5px] pt-[5px] pb-[28px]  break-words`}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              const { x, y } = getContextMenuXY(e.pageX, e.pageY);
+              setContextMenu({
+                x,
+                y,
+                msgId: id,
+                senderId: sender_id,
+                file_type: file_type,
+                file_url: file_url,
+                file_name: file_name,
+                file_size: size,
+              });
+            }}
+          >
+            <a href={file_url} target="_blank" rel="noopener noreferrer">
+              <div
+                className={` p-2 flex gap-2 items-center  ${
+                  sender_id === currentUserID?.id
+                    ? "bg-gradient-to-br from-blue-500/70 to-blue-600/10  border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                    : "bg-gradient-to-br from-gray-600/50 to-gray-900/10  border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                }`}
+              >
+                <FileIcons type={file_type} size={28} className="text-white" />
+
+                <div className="flex flex-col gap-1">
+                  <p className="text-[13.5px]">{file_name}</p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-gray-300">{file_type}</span>
+                    <span className="text-[10px] text-gray-300">•</span>
+                    <span className="text-[10px] text-gray-300">{formatFileSize(Number(size))}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+            <span
+              className={`absolute bottom-1 ${
+                sender_id === currentUserID?.id ? "right-18" : "right-2"
+              }  text-[11px] text-gray-300`}
+            >
+              {sent_time}
+            </span>
+            {sender_id === currentUserID?.id && (
+              <>
+                {read || is_read ? (
+                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                    <FontAwesomeIcon icon={faCheckDouble} />
+                  </span>
+                ) : (
+                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                    <FontAwesomeIcon icon={faCheck} />
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+          {isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-8"></div>
+          )}
+        </div>
+      </div>
+    )
+  );
+
+  const TextMessage = React.memo(
+    ({
+      type,
+      id,
+      sender_id,
+      sender_name,
+      sender_picture,
+      content,
+      sent_at,
+      sent_time,
+      is_read,
+      is_deleted,
+      reply_to,
+      reply_content,
+      reply_file_name,
+      reply_file_type,
+      reply_file_url,
+      is_group,
+      reply_sender_id,
+      reply_sender_name,
+      file_type,
+      file_url,
+      file_name,
+      size,
+      read,
+      isCurrentUser,
+      showAvatar,
+    }) => (
+      <div
+        className={`relative min-w-[16%] max-w-[70%] inline-block  
+                       text-white `}
+      >
+        <div className={`flex items-end gap-3 `}>
+          {!isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-10"></div>
+          )}
+          <div
+            className={` w-[100%] ${
+              sender_id === currentUserID?.id
+                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 border border-white/10 text-white text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+            } text-white pr-[5px] pl-[5px] pt-[5px] pb-[10px]  `}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              const { x, y } = getContextMenuXY(e.pageX, e.pageY);
+              setContextMenu({
+                x,
+                y,
+                msgId: id,
+                senderId: sender_id,
+                msgInfo: content,
+              });
+            }}
+          >
+            {" "}
+            <span className="flex flex-col gap-1">
+              {reply_to && (
+                <span
+                  className={` flex ${
+                    sender_id === currentUserID?.id
+                      ? "bg-gradient-to-br from-blue-500/70 to-blue-600/10  border border-white/10 text-white rounded-br-[6px] rounded-bl-[6px] rounded-tl-[6px] "
+                      : "bg-gradient-to-br from-gray-600/50 to-gray-900/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[6px] rounded-bl-[6px] rounded-tr-[6px]"
+                  }`}
+                >
+                  {reply_file_url ? (
+                    reply_file_type.startsWith("image/") ? (
+                      <div className="flex w-[100%] gap-2">
+                        <div
+                          className={`bg-[#ffffffcf] ${
+                            sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
+                          }  w-[8px] `}
+                        ></div>
+                        <div className="flex justify-between gap-2 w-[100%]">
+                          {reply_sender_id === currentUserID?.id ? (
+                            <p className="mt-2 text-[12px]">You</p>
+                          ) : (
+                            <p className="mt-2 text-[12px]">{reply_sender_name}</p>
+                          )}
+                          <img src={reply_file_url} alt={reply_file_name} className="max-h-15 rounded-md" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <div
+                          className={`bg-[#ffffffcf] ${
+                            sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
+                          }  w-[8px] `}
+                        ></div>
+                        <div className="pb-2">
+                          {reply_sender_id === currentUserID?.id ? (
+                            <p className="mt-2 text-[12px]">You</p>
+                          ) : (
+                            <p className="mt-2 text-[12px]">{reply_sender_name}</p>
+                          )}
+                          <div className="flex items-center">
+                            <FileIcons type={reply_file_type} size={23} className="text-white" />
+                            <span className="p-2 text-[14px]">{reply_file_name}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex gap-2">
+                      <div
+                        className={`bg-[#ffffffcf] ${
+                          sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
+                        }  w-[8px] `}
+                      ></div>
+                      <div className="pb-2">
+                        {reply_sender_id === currentUserID?.id ? (
+                          <p className="mt-2 text-[12px]">You</p>
+                        ) : (
+                          <p className="mt-2 text-[12px]">{reply_sender_name}</p>
+                        )}
+                        <span className="pr-2  text-[13.5px]">{reply_content}</span>
+                      </div>
+                    </div>
+                  )}
+                </span>
+              )}
+              <span className="pr-20 pl-2 pt-1 text-[14px]">{content}</span>
+            </span>
+            <span
+              className={`absolute bottom-1 ${
+                sender_id === currentUserID?.id ? "right-18" : "right-2"
+              }  text-[11px] text-gray-300`}
+            >
+              {sent_time}
+            </span>
+            {sender_id === currentUserID?.id && (
+              <>
+                {read || is_read ? (
+                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                    <FontAwesomeIcon icon={faCheckDouble} />
+                  </span>
+                ) : (
+                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                    <FontAwesomeIcon icon={faCheck} />
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+          {isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-10"></div>
+          )}
+        </div>
+      </div>
+    )
+  );
+
   if (!user) {
     return (
       <div className="flex-1 flex items-center justify-center p-4 text-gray-400">
@@ -591,7 +958,6 @@ function ChatArea({ user, onSelect }) {
   return (
     <div className="w-[75%] overflow-hidden bg-[#14171c] flex flex-col">
       {/* Header */}
-
       <div className="text-[#e8e8e8e0] bg-[#01040963] flex justify-between items-center pr-4 pl-4 pt-2 pb-2 border-b border-[#ffffff30]">
         <div className="flex flex-col">
           <p onClick={() => setShowModal("account")} className="text-[15px] cursor-pointer">
@@ -614,11 +980,13 @@ function ChatArea({ user, onSelect }) {
         </div>
       </div>
 
-      {/* Messages */}
-
+      {/* Message Area */}
       <div className=" space-y-3 w-[94%] p-3 flex-1  overflow-y-auto  hide-scrollbar">
-        {sortedMessages.map((msg) => {
+        {sortedMessages.map((msg, i) => {
+          const prevMsg = i > 0 ? sortedMessages[i - 1] : null;
           const isCurrentUser = msg.sender_id === currentUserID?.id;
+          const showAvatar = !prevMsg || prevMsg.sender_id !== msg.sender_id;
+
           return (
             <>
               <div
@@ -626,306 +994,157 @@ function ChatArea({ user, onSelect }) {
                 className={` ${msg.sender_id === currentUserID?.id ? "text-right" : "text-left"}`}
               >
                 {msg.is_deleted ? (
-                  <p
-                    className={`relative inline-block text center min-w-[12%] max-w-[70%] ${
-                      msg.sender_id === currentUserID?.id
-                        ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 backdrop-blur-md border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] text-left"
-                        : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-                    } text-white p-2 break-words`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Ban size={20} className="text-white" />
-                      You deleted this message
-                    </span>
-                  </p>
+                  <>
+                    {msg.is_group ? (
+                      <>
+                        {!isCurrentUser ? (
+                          <p
+                            className={`relative inline-block text center ml-10 min-w-[12%] max-w-[70%] ${
+                              msg.sender_id === currentUserID?.id
+                                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 backdrop-blur-md border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] text-left"
+                                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                            } text-white p-2 break-words`}
+                          >
+                            <span className="flex items-center gap-2 text-[14px]">
+                              <Ban size={20} className="text-white" />
+                              This message was deleted
+                            </span>
+                          </p>
+                        ) : (
+                          <p
+                            className={`relative inline-block text mr-10 center min-w-[12%] max-w-[70%] ${
+                              msg.sender_id === currentUserID?.id
+                                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 backdrop-blur-md border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] text-left"
+                                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                            } text-white p-2 break-words`}
+                          >
+                            <span className="flex items-center gap-2 text-[14px]">
+                              <Ban size={20} className="text-white" />
+                              You deleted this message
+                            </span>
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {isCurrentUser ? (
+                          <p
+                            className={`relative inline-block text center min-w-[12%] max-w-[70%] ${
+                              msg.sender_id === currentUserID?.id
+                                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 backdrop-blur-md border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] text-left"
+                                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                            } text-white p-2 break-words`}
+                          >
+                            <span className="flex items-center gap-2 text-[14px]">
+                              <Ban size={20} className="text-white" />
+                              You deleted this message
+                            </span>
+                          </p>
+                        ) : (
+                          <p
+                            className={`relative inline-block text center min-w-[12%] max-w-[70%] ${
+                              msg.sender_id === currentUserID?.id
+                                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 backdrop-blur-md border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] text-left"
+                                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                            } text-white p-2 break-words`}
+                          >
+                            <span className="flex items-center gap-2 text-[14px]">
+                              <Ban size={20} className="text-white" />
+                              This message was deleted
+                            </span>
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </>
                 ) : msg.is_group ? (
                   <>
                     {msg.file_url ? (
                       msg.file_type.startsWith("image/") ? (
-                        <div
-                          className={`relative min-w-[16%] max-w-[70%] inline-block  
-                       text-white `}
-                        >
-                          <div className="flex items-end gap-3">
-                            {!isCurrentUser && (
-                              <img src={msg.sender.picture} className="h-[30px] rounded-[50%]" />
-                            )}
-                            <div
-                              className={`w-[100%] ${
-                                msg.sender_id === currentUserID?.id
-                                  ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 backdrop-blur-md border border-white/10 text-white  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-                                  : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-                              } text-white p-[2px]  break-words`}
-                              onContextMenu={(e) => {
-                                e.preventDefault();
-                                const { x, y } = getContextMenuXY(e.pageX, e.pageY);
-                                setContextMenu({
-                                  x,
-                                  y,
-                                  msgId: msg.id,
-                                  senderId: msg.sender_id,
-                                  file_type: msg.file_type,
-                                  file_url: msg.file_url,
-                                  file_name: msg.file_name,
-                                });
-                              }}
-                            >
-                              <a href={msg.file_url}>
-                                <img
-                                  src={msg.file_url}
-                                  alt={msg.file_name}
-                                  className={`max-h-40 ${
-                                    msg.sender_id === currentUserID?.id
-                                      ? " rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-                                      : "rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-                                  } `}
-                                />
-                                <span
-                                  className={`absolute bottom-1 ${
-                                    msg.sender_id === currentUserID?.id ? "right-18" : "right-2"
-                                  }  text-[11px] text-gray-300 `}
-                                  style={{ textShadow: "1px 1px 2px black" }}
-                                >
-                                  {msg.sent_time}
-                                </span>
-
-                                {msg.sender_id === currentUserID?.id && (
-                                  <>
-                                    {msg.read | msg.is_read ? (
-                                      <span
-                                        className="absolute bottom-1 right-12 text-[14px] text-gray-300"
-                                        tyle={{ textShadow: "1px 1px 2px black" }}
-                                      >
-                                        <FontAwesomeIcon icon={faCheckDouble} />
-                                      </span>
-                                    ) : (
-                                      <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-                                        <FontAwesomeIcon icon={faCheck} />
-                                      </span>
-                                    )}
-                                  </>
-                                )}
-                              </a>
-                            </div>
-                            {isCurrentUser && (
-                              <img src={msg.sender.picture} className="h-[30px] rounded-[50%]" />
-                            )}
-                          </div>
-                        </div>
+                        <ImageMessage
+                          type={msg.type}
+                          id={msg.id}
+                          sender_id={msg.sender_id}
+                          sender_name={msg.sender_name}
+                          sender_picture={msg.sender.picture}
+                          content={msg.content}
+                          sent_at={msg.sent_at}
+                          sent_time={msg.sent_time}
+                          is_read={msg.is_read}
+                          is_deleted={msg.is_deleted}
+                          reply_to={msg.reply_to}
+                          reply_content={msg.reply_content}
+                          reply_file_name={msg.reply_file_name}
+                          reply_file_type={msg.reply_file_type}
+                          reply_file_url={msg.reply_file_url}
+                          is_group={msg.is_group}
+                          reply_sender_id={msg.reply_sender?.id}
+                          reply_sender_name={msg.reply_sender?.name}
+                          file_type={msg.file_type}
+                          file_url={msg.file_url}
+                          file_name={msg.file_name}
+                          size={msg.size}
+                          read={msg.read}
+                          isCurrentUser={isCurrentUser}
+                          showAvatar={showAvatar}
+                        />
                       ) : (
-                        <div
-                          className={`relative min-w-[16%] max-w-[70%] inline-block  
-                       text-white `}
-                        >
-                          <div className={`flex items-end gap-3`}>
-                            {!isCurrentUser && (
-                              <img src={msg.sender.picture} className="h-[30px] rounded-[50%]" />
-                            )}
-                            <div
-                              className={`w-[100%] ${
-                                msg.sender_id === currentUserID?.id
-                                  ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 backdrop-blur-md border border-white/10 text-white  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-                                  : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-                              } text-white pr-[5px] pl-[5px] pt-[5px] pb-[28px]  break-words`}
-                              onContextMenu={(e) => {
-                                e.preventDefault();
-                                const { x, y } = getContextMenuXY(e.pageX, e.pageY);
-                                setContextMenu({
-                                  x,
-                                  y,
-                                  msgId: msg.id,
-                                  senderId: msg.sender_id,
-                                  file_type: msg.file_type,
-                                  file_url: msg.file_url,
-                                  file_name: msg.file_name,
-                                  file_size: msg.size,
-                                });
-                              }}
-                            >
-                              <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
-                                <div
-                                  className={` p-2 flex gap-2 items-center  ${
-                                    msg.sender_id === currentUserID?.id
-                                      ? "bg-gradient-to-br from-blue-600/20 to-blue-600/10 backdrop-blur-md border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-                                      : "bg-gradient-to-br from-gray-600/50 to-gray-900/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-                                  }`}
-                                >
-                                  <FileIcons type={msg.file_type} size={28} className="text-white" />
-
-                                  <div className="flex flex-col gap-1">
-                                    <p className="text-[13.5px]">{msg.file_name}</p>
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-[10px] text-gray-300">{msg.file_type}</span>
-                                      <span className="text-[10px] text-gray-300">•</span>
-                                      <span className="text-[10px] text-gray-300">
-                                        {formatFileSize(Number(msg.size))}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </a>
-                              <span
-                                className={`absolute bottom-1 ${
-                                  msg.sender_id === currentUserID?.id ? "right-18" : "right-2"
-                                }  text-[11px] text-gray-300`}
-                              >
-                                {msg.sent_time}
-                              </span>
-                              {msg.sender_id === currentUserID?.id && (
-                                <>
-                                  {msg.read || msg.is_read ? (
-                                    <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-                                      <FontAwesomeIcon icon={faCheckDouble} />
-                                    </span>
-                                  ) : (
-                                    <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-                                      <FontAwesomeIcon icon={faCheck} />
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            {isCurrentUser && (
-                              <img src={msg.sender.picture} className="h-[30px] rounded-[50%]" />
-                            )}
-                          </div>
-                        </div>
+                        <FileMessage
+                          type={msg.type}
+                          id={msg.id}
+                          sender_id={msg.sender_id}
+                          sender_name={msg.sender_name}
+                          sender_picture={msg.sender.picture}
+                          content={msg.content}
+                          sent_at={msg.sent_at}
+                          sent_time={msg.sent_time}
+                          is_read={msg.is_read}
+                          is_deleted={msg.is_deleted}
+                          reply_to={msg.reply_to}
+                          reply_content={msg.reply_content}
+                          reply_file_name={msg.reply_file_name}
+                          reply_file_type={msg.reply_file_type}
+                          reply_file_url={msg.reply_file_url}
+                          is_group={msg.is_group}
+                          reply_sender_id={msg.reply_sender?.id}
+                          reply_sender_name={msg.reply_sender?.name}
+                          file_type={msg.file_type}
+                          file_url={msg.file_url}
+                          file_name={msg.file_name}
+                          size={msg.size}
+                          read={msg.read}
+                          isCurrentUser={isCurrentUser}
+                          showAvatar={showAvatar}
+                        />
                       )
                     ) : (
-                      <div
-                        className={`relative min-w-[16%] max-w-[70%] inline-block  
-                       text-white `}
-                      >
-                        <div className={`flex items-end gap-3 `}>
-                          {!isCurrentUser && (
-                            <img src={msg.sender.picture} className="h-[30px] rounded-[50%]" />
-                          )}
-                          <div
-                            className={` w-[100%] ${
-                              msg.sender_id === currentUserID?.id
-                                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 border border-white/10 text-white text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-                                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-                            } text-white pr-[5px] pl-[5px] pt-[5px] pb-[10px]  `}
-                            onContextMenu={(e) => {
-                              e.preventDefault();
-                              const { x, y } = getContextMenuXY(e.pageX, e.pageY);
-                              setContextMenu({
-                                x,
-                                y,
-                                msgId: msg.id,
-                                senderId: msg.sender_id,
-                                msgInfo: msg.content,
-                              });
-                            }}
-                          >
-                            {" "}
-                            <span className="flex flex-col gap-1">
-                              {msg.reply_to && (
-                                <span
-                                  className={` flex ${
-                                    msg.sender_id === currentUserID?.id
-                                      ? "bg-gradient-to-br from-blue-500/70 to-blue-600/10  border border-white/10 text-white rounded-br-[6px] rounded-bl-[6px] rounded-tl-[6px] "
-                                      : "bg-gradient-to-br from-gray-600/50 to-gray-900/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[6px] rounded-bl-[6px] rounded-tr-[6px]"
-                                  }`}
-                                >
-                                  {msg.reply_file_url ? (
-                                    msg.reply_file_type.startsWith("image/") ? (
-                                      <div className="flex w-[100%] gap-2">
-                                        <div
-                                          className={`bg-[#ffffffcf] ${
-                                            msg.sender_id === currentUserID?.id
-                                              ? "rounded-l-[4px]"
-                                              : "rounded-bl-[4px]"
-                                          }  w-[8px] `}
-                                        ></div>
-                                        <div className="flex justify-between gap-2 w-[100%]">
-                                          {msg.reply_sender?.id === currentUserID?.id ? (
-                                            <p className="mt-2 text-[12px]">You</p>
-                                          ) : (
-                                            <p className="mt-2 text-[12px]">{msg.reply_sender?.name}</p>
-                                          )}
-                                          <img
-                                            src={msg.reply_file_url}
-                                            alt={msg.reply_file_name}
-                                            className="max-h-15 rounded-md"
-                                          />
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="flex gap-2">
-                                        <div
-                                          className={`bg-[#ffffffcf] ${
-                                            msg.sender_id === currentUserID?.id
-                                              ? "rounded-l-[4px]"
-                                              : "rounded-bl-[4px]"
-                                          }  w-[8px] `}
-                                        ></div>
-                                        <div className="pb-2">
-                                          {msg.reply_sender?.id === currentUserID?.id ? (
-                                            <p className="mt-2 text-[12px]">You</p>
-                                          ) : (
-                                            <p className="mt-2 text-[12px]">{msg.reply_sender?.name}</p>
-                                          )}
-                                          <div className="flex items-center">
-                                            <FileIcons
-                                              type={msg.reply_file_type}
-                                              size={23}
-                                              className="text-white"
-                                            />
-                                            <span className="p-2 text-[14px]">{msg.reply_file_name}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )
-                                  ) : (
-                                    <div className="flex gap-2">
-                                      <div
-                                        className={`bg-[#ffffffcf] ${
-                                          msg.sender_id === currentUserID?.id
-                                            ? "rounded-l-[4px]"
-                                            : "rounded-bl-[4px]"
-                                        }  w-[8px] `}
-                                      ></div>
-                                      <div className="pb-2">
-                                        {msg.reply_sender?.id === currentUserID?.id ? (
-                                          <p className="mt-2 text-[12px]">You</p>
-                                        ) : (
-                                          <p className="mt-2 text-[12px]">{msg.reply_sender?.name}</p>
-                                        )}
-                                        <span className="pr-2  text-[13.5px]">{msg.reply_content}</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </span>
-                              )}
-                              <span className="pr-20 pl-2 pt-1 text-[14px]">{msg.content}</span>
-                            </span>
-                            <span
-                              className={`absolute bottom-1 ${
-                                msg.sender_id === currentUserID?.id ? "right-18" : "right-2"
-                              }  text-[11px] text-gray-300`}
-                            >
-                              {msg.sent_time}
-                            </span>
-                            {msg.sender_id === currentUserID?.id && (
-                              <>
-                                {msg.read || msg.is_read ? (
-                                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-                                    <FontAwesomeIcon icon={faCheckDouble} />
-                                  </span>
-                                ) : (
-                                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-                                    <FontAwesomeIcon icon={faCheck} />
-                                  </span>
-                                )}
-                              </>
-                            )}
-                          </div>
-                          {isCurrentUser && (
-                            <img src={msg.sender.picture} className="h-[30px] rounded-[50%]" />
-                          )}
-                        </div>
-                      </div>
+                      <TextMessage
+                        type={msg.type}
+                        id={msg.id}
+                        sender_id={msg.sender_id}
+                        sender_name={msg.sender_name}
+                        sender_picture={msg.sender.picture}
+                        content={msg.content}
+                        sent_at={msg.sent_at}
+                        sent_time={msg.sent_time}
+                        is_read={msg.is_read}
+                        is_deleted={msg.is_deleted}
+                        reply_to={msg.reply_to}
+                        reply_content={msg.reply_content}
+                        reply_file_name={msg.reply_file_name}
+                        reply_file_type={msg.reply_file_type}
+                        reply_file_url={msg.reply_file_url}
+                        is_group={msg.is_group}
+                        reply_sender_id={msg.reply_sender?.id}
+                        reply_sender_name={msg.reply_sender?.name}
+                        file_type={msg.file_type}
+                        file_url={msg.file_url}
+                        file_name={msg.file_name}
+                        size={msg.size}
+                        read={msg.read}
+                        isCurrentUser={isCurrentUser}
+                        showAvatar={showAvatar}
+                      />
                     )}
                   </>
                 ) : (

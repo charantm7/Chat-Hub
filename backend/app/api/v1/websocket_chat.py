@@ -82,7 +82,9 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                 file_type = content['file_type']
                 unique_name = content['unique_name']
                 size = content['size']
-
+                is_group = data.get("is_group")
+                sender = content['sender']
+                print(sender)
                 file_message = db.query(Message).filter(
                     Message.unique_name == unique_name).one_or_none()
 
@@ -95,8 +97,8 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                             "sender_id": current_user.id,
                             "sender_name": current_user.name,
                             "sender": {
-                                "name": new_message.sender.name,
-                                "picture": new_message.sender.picture
+                                "name": sender['name'],
+                                "picture": sender['picture']
                             },
                             "file_name": file_name,
                             "file_url": file_url,
@@ -104,7 +106,8 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                             "file_type": file_type,
                             "sent_at": file_message.sent_at.strftime("%I:%M %p"),
                             "sent_time": file_message.sent_at.strftime("%I:%M %p"),
-                            "is_read": file_message.is_read
+                            "is_read": file_message.is_read,
+                            "is_group": is_group
                          }
                     )
 
@@ -149,6 +152,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                             "reply_file_name": reply_message.file_name,
                             "reply_file_url": reply_message.file_url,
                             "reply_file_type": reply_message.file_type,
+                            "is_group": is_group,
                             "reply_sender": {
                                 "id": reply_message.sender.id,
                                 "name": reply_message.sender.name,
