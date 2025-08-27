@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Authentication from "./components/Authentication";
 import AuthCallBack from "./components/AuthCallBack";
 import AddFriends from "./components/AddFriends";
+import ProPlans from "./components/Payment";
 
 const App = () => {
   return (
@@ -20,6 +21,7 @@ const App = () => {
       <Route path="/" element={<Authentication />} />
       <Route path="/auth/callback" element={<AuthCallBack />} />
       <Route path="/add" element={<AddFriends />} />
+      <Route path="/payments" element={<ProPlans />} />
     </Routes>
   );
 };
