@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 import razorpay
 import os
 from datetime import datetime, timedelta
+from app.models.user_model import Payments, PaymentStatus, ProPlan, Users
 
 from app.core.config import settings
+from app.core.psql_connection import get_db
 
 payment = APIRouter()
 
@@ -39,7 +42,7 @@ async def create_payment_order(data: CreatOrder):
 
 
 @payment.post("/verify-payment")
-async def verify_payment(request: Request):
+async def verify_payment(request: Request, db: Session = Depends(get_db)):
     body = await request.json()
 
     order_id = body.get("razorpay_order_id")
@@ -48,6 +51,26 @@ async def verify_payment(request: Request):
     user_id = body.get("user_id")
     plan = body.get("plan")
 
+    if plan == "monthly":
+        expiry_date = datetime.now() + timedelta(days=30)
+        subscription_plan = ProPlan.monthly
+        amount = 29
+    else:
+        expiry_date = datetime.now() + timedelta(days=180)
+        subscription_plan = ProPlan.month6
+        amount = 149
+
+    new_payment = Payments(
+        user_id=user_id,
+        amount=amount,
+        currency="INR",
+        status=PaymentStatus.pending,
+        plan=subscription_plan,
+        expiry_date=expiry_date,
+    )
+    db.add(new_payment)
+    db.flush()
+
     try:
         client.utility.verify_payment_signature({
             "razorpay_order_id": order_id,
@@ -55,12 +78,23 @@ async def verify_payment(request: Request):
             "razorpay_signature": signature
         })
     except:
+
+        new_payment.status = PaymentStatus.failed
+        db.commit()
         raise HTTPException(
             status_code=400, detail="Payment verification failed")
 
-    if plan == "monthly":
-        expiry_date = datetime.now() + timedelta(days=30)
-    else:
-        expiry_date = datetime.now() + timedelta(days=180)
+    new_payment.status = PaymentStatus.success
 
-    return {"status": "success", "expiry_date": expiry_date}
+    user = db.query(Users).filter(Users.id == user_id).first()
+    if user:
+        user.is_pro = True
+        user.pro_expiry = expiry_date
+
+    db.commit()
+
+    return {
+        "status": "success",
+        "expiry_date": expiry_date,
+        "user_id": user_id
+    }

@@ -7,8 +7,12 @@ import { faUserPlus, faInbox } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
 import { getFriends } from "./ChatList";
 import chatHubLogo from "../assets/chat-hub-logo-2.png";
+import { FaCrown } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 function Navbar({ onSelect }) {
+  const navigate = useNavigate();
+
   const [showModal, setShowModal] = useState(null);
   const [friendRequests, setFriendRequest] = useState([]);
   const [count, setCount] = useState(null);
@@ -119,8 +123,14 @@ function Navbar({ onSelect }) {
       <div className="flex items-center gap-2">
         <img src={chatHubLogo} alt="..." className="h-[35px] rounded-[50%]" />
         <h3 className="text-2xl font-bold font-sans">Chat Hub</h3>
+        {user?.is_pro && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[7px] bg-gradient-to-r from-yellow-500/20 via-amber-400/20 to-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-[12px] font-semibold shadow-sm ml-5">
+            🌟 Premium
+          </span>
+        )}
       </div>
       <div className="flex text-[#e8e8e8e0] gap-[2rem] items-center">
+        <FaCrown onClick={() => navigate("/payments")} className="text-white text-lg cursor-pointer" />
         <div className="flex items-center">
           <FontAwesomeIcon
             icon={faInbox}
@@ -150,13 +160,21 @@ function Navbar({ onSelect }) {
         />
 
         <div className="pl-[1rem] border-l-1 border-[#e8e8e838]">
-          <img
-            onClick={() => onSelect("account")}
-            src={user.picture}
-            referrerPolicy="no-referrer"
-            alt=".."
-            className="rounded-[50%] h-[35px] w-[35px] cursor-pointer"
-          />
+          <div
+            className={` ${
+              user?.is_pro
+                ? "rounded-[50%] h-[37px] w-[37px] border-2 flex items-center justify-center border-yellow-400"
+                : ""
+            }  `}
+          >
+            <img
+              onClick={() => onSelect("account")}
+              src={user.picture}
+              referrerPolicy="no-referrer"
+              alt=".."
+              className="rounded-[50%] h-[37px] w-[37px] p-[3px] cursor-pointer"
+            />
+          </div>
         </div>
       </div>
       {showModal == "add" && (

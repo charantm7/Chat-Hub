@@ -64,7 +64,7 @@ async def get_current_user(token: str = Depends(oauth_scheme), db: Session = Dep
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     await client.set(f'current_user:{token}', json.dumps(user.model_dump(mode='json')))
-
+    print(user)
     return user
 
 

@@ -19,6 +19,17 @@ class MessageStatus(str, enum.Enum):
     read = "read"
 
 
+class PaymentStatus(str, enum.Enum):
+    pending = "pending"
+    success = "success"
+    failed = "failed"
+
+
+class ProPlan(str, enum.Enum):
+    monthly = "monthly"
+    month6 = "6month"
+
+
 class Users(Base):
     __tablename__ = 'users'
 
@@ -33,8 +44,11 @@ class Users(Base):
     last_name = Column(String, nullable=True)
     date_of_birth = Column(Date, nullable=True)
     about = Column(String, nullable=True)
+    is_pro = Column(Boolean, default=False)
+    pro_expiry = Column(TIMESTAMP(timezone=True), nullable=True)
 
     messages = relationship('Message', back_populates='sender')
+    payments = relationship('Payments', back_populates='user')
 
 
 class Chats(Base):
@@ -94,3 +108,20 @@ class FriendRequest(Base):
 
     from_user = relationship("Users", foreign_keys=[from_user_id])
     to_user = relationship("Users", foreign_keys=[to_user_id])
+
+
+class Payments(Base):
+    __tablename__ = "payments"
+
+    id = Column(UUID, primary_key=True, default=uuid4, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    amount = Column(Integer, default=0, nullable=False)
+    currency = Column(String, default="INR", nullable=False)
+    status = Column(Enum(PaymentStatus), default=PaymentStatus.pending)
+    payment_gateway = Column(String, default="Razorpay")
+    plan = Column(Enum(ProPlan), nullable=False)
+    expiry_date = Column(TIMESTAMP(timezone=True), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True),
+                        server_default=text('now()'), nullable=False)
+
+    user = relationship('Users', back_populates='payments')

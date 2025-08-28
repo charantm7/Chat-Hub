@@ -1,6 +1,24 @@
-from datetime import date
-from typing import Optional
+
+from datetime import date, datetime
+from typing import Optional, List
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, validator, ConfigDict
+
+from app.models.user_model import PaymentStatus, ProPlan
+
+
+class PaymentsSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: Optional[UUID] = None
+    user_id: Optional[int] = None
+    amount: Optional[int] = None
+    currency: Optional[str] = None
+    status: Optional[PaymentStatus] = None
+    payment_gateway: Optional[str] = None
+    plan: Optional[ProPlan] = None
+    expiry_date: Optional[datetime] = None
+    created_at: Optional[datetime] = None
 
 
 class User(BaseModel):
@@ -16,6 +34,9 @@ class User(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     date_of_birth: Optional[date] = None
+    is_pro: Optional[bool] = None
+    pro_expiry: Optional[datetime] = None
+    payments: Optional[List[PaymentsSchema]] = None
 
 
 class TokenData(BaseModel):

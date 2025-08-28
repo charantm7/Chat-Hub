@@ -11,7 +11,6 @@ import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 function Main({ selectedModal, onSelect }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-
   function handleOverlayClick(e) {
     if (e.target.id === "overlay") {
       onSelect(null);
@@ -100,11 +99,19 @@ function Main({ selectedModal, onSelect }) {
           onClick={handleOverlayClick}
           className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
         >
-          <div className="bg-[#ffffffd0] border border-black/10 h-[60%] w-[50%] rounded-2xl overflow-hidden">
+          <div className="bg-[#ffffffd0] border border-black/10 h-[62%] w-[50%] rounded-2xl overflow-hidden">
             <div className="w-full">
               <img src={profileBg} alt="...." className="h-[10rem] w-full object-cover" />
             </div>
-            <img src={currentUser.picture} alt="..." className="absolute top-[37%] ml-[40px] rounded-[50%]" />
+            <div
+              className={` ${
+                currentUser?.is_pro
+                  ? "rounded-[50%]  border-4 flex items-center justify-center border-yellow-400"
+                  : ""
+              } top-[37%] ml-[40px] absolute`}
+            >
+              <img src={currentUser.picture} alt="..." className=" p-1  rounded-[50%]" />
+            </div>
             <div className="h-[100%] p-[1rem] flex flex-col">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -116,14 +123,25 @@ function Main({ selectedModal, onSelect }) {
                     icon={faPenToSquare}
                   />
                 </div>
-                <p className="flex items-center gap-2">
-                  {currentUser.email}
-                  {currentUser.is_verified == true ? (
-                    <CheckCircle className="w-4 h-4 text-blue-500" />
+                <div className="flex flex-col items-end gap-3">
+                  <p className="flex items-center gap-2">
+                    {currentUser.email}
+                    {currentUser.is_verified == true ? (
+                      <CheckCircle className="w-4 h-4 text-blue-500" />
+                    ) : (
+                      <BadgeCheck className="h-5 w-5 text-blue-500 inline-block ml-1" />
+                    )}
+                  </p>
+                  {currentUser?.is_pro ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white text-sm font-semibold tracking-wide shadow-md ring-1 ring-yellow-500/40">
+                      🌟 Premium
+                    </span>
                   ) : (
-                    <BadgeCheck className="h-5 w-5 text-blue-500 inline-block ml-1" />
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold tracking-wide shadow-sm ring-1 ring-gray-300">
+                      Free Plan
+                    </span>
                   )}
-                </p>
+                </div>
               </div>
               <div className="flex gap-7">
                 <div className="w-[40%] mt-10 h-full flex flex-col gap-[1rem]">

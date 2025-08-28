@@ -83,7 +83,7 @@ function ChatArea({ user, onSelect }) {
     y: 0,
     msgId: null,
   });
-  console.log("reply", messages);
+  console.log("reply", currentUserID);
   const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -981,7 +981,11 @@ function ChatArea({ user, onSelect }) {
       </div>
 
       {/* Message Area */}
-      <div className=" space-y-3 w-[94%] p-3 flex-1  overflow-y-auto  hide-scrollbar">
+      <div
+        className={`space-y-3  ${
+          currentUserID?.is_pro ? "w-[94%]" : "w-[100%]"
+        } p-3 flex-1  overflow-y-auto  hide-scrollbar`}
+      >
         {sortedMessages.map((msg, i) => {
           const prevMsg = i > 0 ? sortedMessages[i - 1] : null;
           const isCurrentUser = msg.sender_id === currentUserID?.id;
@@ -1401,21 +1405,23 @@ function ChatArea({ user, onSelect }) {
                   </>
                 )}
               </div>
-              <div className="absolute flex flex-col gap-10 items-center pt-7 right-[22px] top-[17%] h-[71%] w-[50px] bg-[rgba(1,4,9,0.29)] border-[1px] rounded-md border-[#ffffff14] text-gray-300/70">
-                {msg.is_group ? (
-                  <FontAwesomeIcon icon={faUsers} className=" text-[16  px] cursor-pointer" />
-                ) : (
-                  <FontAwesomeIcon icon={faUser} className=" text-[16 px] cursor-pointer" />
-                )}
+              {currentUserID?.is_pro && (
+                <div className="absolute flex flex-col gap-10 items-center pt-7 right-[22px] top-[17%] h-[71%] w-[50px] bg-[rgba(1,4,9,0.29)] border-[1px] rounded-md border-[#ffffff14] text-gray-300/70">
+                  {msg.is_group ? (
+                    <FontAwesomeIcon icon={faUsers} className=" text-[16  px] cursor-pointer" />
+                  ) : (
+                    <FontAwesomeIcon icon={faUser} className=" text-[16 px] cursor-pointer" />
+                  )}
 
-                <FontAwesomeIcon icon={faCircleInfo} className=" text-[16 px] cursor-pointer" />
-                <FontAwesomeIcon icon={faImage} className=" text-[16  px] cursor-pointer" />
-                <FontAwesomeIcon icon={faFileAlt} className=" text-[16  px] cursor-pointer" />
-                <FontAwesomeIcon icon={faVideo} className=" text-[16  px] cursor-pointer" />
-                <FontAwesomeIcon icon={faThumbTack} className=" text-[16  px] cursor-pointer" />
-                <FontAwesomeIcon icon={faRobot} className=" text-[16  px] cursor-pointer" />
-                <FontAwesomeIcon icon={faGears} className=" text-[16  px] cursor-pointer" />
-              </div>
+                  <FontAwesomeIcon icon={faCircleInfo} className=" text-[16 px] cursor-pointer" />
+                  <FontAwesomeIcon icon={faImage} className=" text-[16  px] cursor-pointer" />
+                  <FontAwesomeIcon icon={faFileAlt} className=" text-[16  px] cursor-pointer" />
+                  <FontAwesomeIcon icon={faVideo} className=" text-[16  px] cursor-pointer" />
+                  <FontAwesomeIcon icon={faThumbTack} className=" text-[16  px] cursor-pointer" />
+                  <FontAwesomeIcon icon={faRobot} className=" text-[16  px] cursor-pointer" />
+                  <FontAwesomeIcon icon={faGears} className=" text-[16  px] cursor-pointer" />
+                </div>
+              )}
             </>
           );
         })}
