@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 
 function Main({ selectedModal, onSelect }) {
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   function handleOverlayClick(e) {
     if (e.target.id === "overlay") {
@@ -89,9 +89,17 @@ function Main({ selectedModal, onSelect }) {
     get_current_user();
   }, []);
 
+  async function setOnselectUser(chat) {
+    setSelectedUser((prev) => {
+      if (prev.find((c) => c.id === chat.id)) return prev;
+      if (prev.length >= 2) return [prev[0], chat];
+      return [...prev, chat];
+    });
+  }
+
   return (
     <main className="border border-[var(--border)] bg-[#0104099e] h-[90.5vh] rounded-b-lg flex overflow-hidden">
-      <ChatList onSelect={setSelectedUser} selectedUser={selectedUser} />
+      <ChatList onSelect={setOnselectUser} selectedUser={selectedUser} />
       <ChatArea user={selectedUser} onSelect={setSelectedUser} />
       {selectedModal == "account" && (
         <div

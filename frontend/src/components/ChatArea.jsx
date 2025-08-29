@@ -64,9 +64,9 @@ function showNotification(title, body) {
   }
 }
 
-function ChatArea({ user, onSelect }) {
+function ChatArea({ users, onSelect }) {
   const [messages, setMessages] = useState({});
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState({});
   const [token, setToken] = useState(null);
   const [currentUserID, setCurrentUserID] = useState(null);
   const [showModal, setShowModal] = useState(null);
@@ -136,158 +136,166 @@ function ChatArea({ user, onSelect }) {
   }, [contextMenu]);
 
   useEffect(() => {
-    if (!token || !user?.chat_id) return;
-    (async () => {
-      try {
-        const res = await fetch(`http://127.0.0.1:8000/v1/chat/${user.chat_id}/message`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Failed to load messages");
-        const data = await res.json();
-        setMessages((prev) => ({
-          ...prev,
-          [user.chat_id]: Array.isArray(data.messages) ? data.messages : [],
-        }));
-      } catch (err) {
-        console.error(err);
-      }
-    })();
-  }, [token, user?.chat_id]);
+    if (!token) return;
+
+    users.forEach((user) => {
+      (async () => {
+        try {
+          const res = await fetch(`http://127.0.0.1:8000/v1/chat/${user.chat_id}/message`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) throw new Error("Failed to load messages");
+          const data = await res.json();
+          setMessages((prev) => ({
+            ...prev,
+            [user.chat_id]: Array.isArray(data.messages) ? data.messages : [],
+          }));
+        } catch (err) {
+          console.error(err);
+        }
+      })();
+    });
+  }, [token, users]);
 
   useEffect(() => {
-    if (!token || !user?.chat_id) return;
-    async function markread() {
-      try {
-        const res = await fetch(`http://127.0.0.1:8000/v1/chat/markread/${user.chat_id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    if (!token) return;
 
-        if (!res.ok) throw new Error("Request failed");
-      } catch (err) {
-        console.log(err);
+    users.forEach((user) => {
+      async function markread() {
+        try {
+          const res = await fetch(`http://127.0.0.1:8000/v1/chat/markread/${user.chat_id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!res.ok) throw new Error("Request failed");
+        } catch (err) {
+          console.log(err);
+        }
       }
-    }
-    markread();
-  }, [token, user?.chat_id]);
+      markread();
+    });
+  }, [token, users]);
 
   useEffect(() => {
-    if (!token || !user?.chat_id) return;
+    if (!token) return;
 
-    socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${user.chat_id}?token=${token}`);
+    users.forEach((user) => {
+      if (!user?.chat_id) return;
 
-    socketRef.current.onopen = () => console.log("WebSocket connected");
+      const ws = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${user.chat_id}?token=${token}`);
+      socketRef.current[user.chat_id] = ws;
 
-    socketRef.current.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      console.log("Received:", msg);
+      ws.onopen = () => console.log("WebSocket connected:", user.chat_id);
 
-      switch (msg.type) {
-        case "typing":
-          if (msg.sender_id !== currentUserID?.id) {
-            if (msg.isTyping) {
-              setTypingUser((prev) => [...prev.filter((u) => u !== msg.sender_id), msg.sender_id]);
-            } else {
-              setTypingUser((prev) => prev.filter((u) => u != msg.sender_id));
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        console.log("Received:", msg, "for chat:", user.chat_id);
+
+        switch (msg.type) {
+          case "typing":
+            if (msg.sender_id !== currentUserID?.id) {
+              if (msg.isTyping) {
+                setTypingUser((prev) => [...prev.filter((u) => u !== msg.sender_id), msg.sender_id]);
+              } else {
+                setTypingUser((prev) => prev.filter((u) => u !== msg.sender_id));
+              }
             }
-          }
-          break;
+            break;
 
-        case "message_read":
-          setMessages((prev) => {
-            const updated = { ...prev };
-            const chatId = user?.chat_id;
-            if (!chatId || !updated[chatId]) return prev;
+          case "message_read":
+            setMessages((prev) => {
+              const updated = { ...prev };
+              const chatId = user.chat_id;
+              if (!chatId || !updated[chatId]) return prev;
 
-            const ids = msg.message_ids || [];
-            updated[chatId] = updated[chatId].map((m) => (ids.includes(m.id) ? { ...m, read: true } : m));
+              const ids = msg.message_ids || [];
+              updated[chatId] = updated[chatId].map((m) => (ids.includes(m.id) ? { ...m, read: true } : m));
 
-            return updated;
-          });
-          break;
+              return updated;
+            });
+            break;
 
-        case "message_edit":
-          setMessages((prev) => {
-            const updated = { ...prev };
-            updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
-              m.id === msg.message_id ? { ...m, content: msg.content } : m
-            );
-            return updated;
-          });
+          case "message_edit":
+            setMessages((prev) => {
+              const updated = { ...prev };
+              updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
+                m.id === msg.message_id ? { ...m, content: msg.content } : m
+              );
+              return updated;
+            });
+            break;
 
-          break;
+          case "delete_message":
+            setMessages((prev) => {
+              const updated = { ...prev };
+              updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
+                m.id === msg.message_id ? { ...m, is_deleted: true } : m
+              );
+              return updated;
+            });
+            break;
 
-        case "delete_message":
-          setMessages((prev) => {
-            const updated = { ...prev };
-            updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
-              m.id === msg.message_id ? { ...m, is_deleted: true } : m
-            );
-            return updated;
-          });
-          break;
+          default:
+            if (msg.Message) return;
 
-        default:
-          if (msg.Message) return;
+            const chatId = user.chat_id;
+            if (!chatId) return;
 
-          if (document.hidden) {
-            console.log("tryingg");
-            showNotification("New Message", msg.content);
-            console.log("notification sent");
-          }
+            setMessages((prev) => {
+              const previous = prev[chatId] || [];
 
-          setMessages((prev) => {
-            const chatId = user?.chat_id;
-            if (!chatId) return prev;
+              const incomingMsg = {
+                ...msg,
+                sent_at: msg.sent_at || msg.timestamp,
+                content: msg.content || msg.message,
+              };
 
-            const previous = prev[chatId] || [];
+              const existingIndex = previous.findIndex(
+                (m) =>
+                  m.sender_id === incomingMsg.sender_id &&
+                  m.content === incomingMsg.content &&
+                  m.id?.startsWith("temp-")
+              );
 
-            const incomingMsg = {
-              ...msg,
-              sent_at: msg.sent_at || msg.timestamp,
-              content: msg.content || msg.message,
-            };
+              let updated;
+              if (existingIndex !== -1) {
+                updated = [...previous];
+                updated[existingIndex] = incomingMsg;
+              } else if (!previous.some((m) => m.id === incomingMsg.id)) {
+                updated = [...previous, incomingMsg];
+              } else {
+                updated = previous;
+              }
 
-            const existingIndex = previous.findIndex(
-              (m) =>
-                m.sender_id === incomingMsg.sender_id &&
-                m.content === incomingMsg.content &&
-                m.id?.startsWith("temp-")
-            );
+              updated.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+              return { ...prev, [chatId]: updated };
+            });
 
-            let updated;
-            if (existingIndex !== -1) {
-              updated = [...previous];
-              updated[existingIndex] = incomingMsg;
-            } else if (!previous.some((m) => m.id === incomingMsg.id)) {
-              updated = [...previous, incomingMsg];
-            } else {
-              updated = previous;
+            // optional notification
+            if (document.hidden) {
+              showNotification("New Message", msg.content);
             }
+        }
+      };
 
-            updated.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-            return { ...prev, [chatId]: updated };
-          });
+      ws.onclose = () => {
+        console.log("WebSocket closed:", user.chat_id);
+        delete socketRef.current[user.chat_id];
+      };
+    });
 
-          if (document.hidden) {
-            console.log("tryingg");
-            showNotification("New Message", msg.content);
-            console.log("notification sent");
-          }
-      }
-    };
-
-    socketRef.current.onclose = () => console.log("WebSocket closed");
     return () => {
-      socketRef.current?.close();
+      Object.values(socketRef.current).forEach((ws) => ws.close());
+      socketRef.current = {};
       setTypingUser([]);
     };
-  }, [token, user?.chat_id, currentUserID?.id]);
+  }, [token, users, currentUserID?.id]);
 
-  const sendMessage = () => {
+  const sendMessage = (user) => {
     if (!input.trim()) return;
 
     const newMsg = {
@@ -334,7 +342,7 @@ function ChatArea({ user, onSelect }) {
     setInput("");
   };
 
-  const getUnreadMessage = () => {
+  const getUnreadMessage = (user) => {
     const chatId = user?.chat_id;
     if (!chatId || !messages[chatId]) return [];
 
@@ -343,8 +351,8 @@ function ChatArea({ user, onSelect }) {
       .map((msg) => msg.id);
   };
 
-  const sendReadReceipt = () => {
-    const unreadIds = getUnreadMessage();
+  const sendReadReceipt = (user) => {
+    const unreadIds = getUnreadMessage(user);
 
     if (unreadIds.length > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(
@@ -357,26 +365,30 @@ function ChatArea({ user, onSelect }) {
     }
   };
   useEffect(() => {
-    if (user?.chat_id && !document.hidden) {
-      sendReadReceipt();
-    }
-  }, [messages, user?.chat_id]);
+    users.forEach((user) => {
+      if (user?.chat_id && !document.hidden) {
+        sendReadReceipt();
+      }
+    });
+  }, [messages, users]);
 
   useEffect(() => {
-    const chatMessages = messages[user?.chat_id] || [];
-    chatMessages
-      .filter((m) => m.sender_id !== currentUserID?.id && m.status !== "read")
-      .forEach((m) => sendReadReceipt(m.id));
-  }, [messages, user?.chat_id]);
+    users.forEach((user) => {
+      const chatMessages = messages[user?.chat_id] || [];
+      chatMessages
+        .filter((m) => m.sender_id !== currentUserID?.id && m.status !== "read")
+        .forEach((m) => sendReadReceipt(m.id));
+    });
+  }, [messages, users]);
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e, user) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      sendMessage(user);
     }
   };
-  const handleMessageSend = () => {
-    sendMessage();
+  const handleMessageSend = (user) => {
+    sendMessage(user);
   };
 
   const sendTypingIndicatorTrue = useDebounce(() => {
@@ -1512,12 +1524,15 @@ function ChatArea({ user, onSelect }) {
           <div className="flex w-full bg-[rgba(1,4,9,0.39)] rounded-md items-center text-[#e8e8e8e0] pr-5 pl-4 gap-4  border-[#ffffff39]">
             <FontAwesomeIcon icon={faFaceSmile} className="text-[20px]" />
             <input
-              value={input}
+              value={input[user.chat_id] || ""}
               onChange={(e) => {
-                setInput(e.target.value);
+                setInput((prev) => ({
+                  ...prev,
+                  [user.chat_id]: e.target.value,
+                }));
                 handleMessageChange(e);
               }}
-              onKeyDown={handleKeyPress}
+              onKeyDown={(e) => handleKeyPress(e, user)}
               placeholder="Write a message..."
               className="w-full h-[3.5rem] outline-0 bg-transparent text-white"
             />
@@ -1542,7 +1557,7 @@ function ChatArea({ user, onSelect }) {
         </div>
         <div className="flex items-center h-full w-[40px]">
           <FontAwesomeIcon
-            onClick={() => handleMessageSend()}
+            onClick={() => handleMessageSend(user)}
             icon={faPaperPlane}
             className={`rotate-45 pl-1 text-[25px] ${input ? "text-white" : "text-[#e8e8e8c8]"} `}
           />
