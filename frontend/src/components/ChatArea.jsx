@@ -64,7 +64,7 @@ function showNotification(title, body) {
   }
 }
 
-function ChatArea({ users, onSelect }) {
+function ChatArea({ users, onCancleSelect }) {
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
   const [token, setToken] = useState(null);
@@ -947,7 +947,7 @@ function ChatArea({ users, onSelect }) {
   //   )
   // );
 
-  if (!users) {
+  if (users.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-4 text-gray-400">
         <p className="pl-3 pt-1 pb-1 pr-3 rounded-4xl bg-[#ffffff13]">Select a user to start chatting</p>
@@ -960,10 +960,10 @@ function ChatArea({ users, onSelect }) {
 
   return (
     <>
-      <div className={`flex ${is_pro ? "w-[75%]" : "w-full"} `}>
+      <div className={`flex ${is_pro ? "w-[75%]" : "w-[75%]"} `}>
         {users.map((user) => {
           return (
-            <div className="w-full overflow-hidden bg-[#14171c] border-[.5px] border-[#ffffff2c] flex flex-col">
+            <div className="w-full overflow-hidden bg-[#14171c] border-r-1 border-[#ffffff2c] flex flex-col">
               {/* Header */}
               <div className="text-[#e8e8e8e0] bg-[#01040963] flex justify-between items-center pr-4 pl-4 pt-2 pb-2 border-b border-[#ffffff30]">
                 <div className="flex flex-col">
@@ -980,7 +980,7 @@ function ChatArea({ users, onSelect }) {
                   <FontAwesomeIcon icon={faMagnifyingGlass} className="cursor-pointer" />
                   <FontAwesomeIcon icon={faEllipsisVertical} className="cursor-pointer" />
                   <FontAwesomeIcon
-                    onClick={() => onSelect(null)}
+                    onClick={() => onCancleSelect(user.chat_id)}
                     icon={faXmark}
                     className="p-[3px] pt-1 pb-1 rounded-[50%] cursor-pointer hover:bg-[#ff2b2bdf]"
                   />
@@ -1412,7 +1412,7 @@ function ChatArea({ users, onSelect }) {
                           </>
                         )}
                       </div>
-                      {currentUserID?.is_pro && (
+                      {is_pro === false && (
                         <div className="absolute flex flex-col gap-10 items-center pt-7 right-[22px] top-[17%] h-[71%] w-[50px] bg-[rgba(1,4,9,0.29)] border-[1px] rounded-md border-[#ffffff14] text-gray-300/70">
                           {msg.is_group ? (
                             <FontAwesomeIcon icon={faUsers} className=" text-[16  px] cursor-pointer" />
@@ -1436,8 +1436,12 @@ function ChatArea({ users, onSelect }) {
               </div>
 
               {/* Input Area */}
-              <div className="flex items-center  justify-evenly  pb-3 pt-3 w-[99%] z-1">
-                <div className="flex flex-col border-1 border-[#ffffff39] w-[93%]  rounded-md  ">
+              <div className="flex items-center  justify-evenly  pb-3  pt-3 w-full z-1">
+                <div
+                  className={`flex flex-col border-1 border-[#ffffff39] ${
+                    users.length === 1 ? "w-[93%]" : "w-[85%]"
+                  }  rounded-md  `}
+                >
                   {replyMessage && (
                     <>
                       {replyMessage.replyFileUrl ? (

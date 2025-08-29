@@ -96,8 +96,8 @@ function Main({ selectedModal, onSelect }) {
 
       if (currentUser?.is_pro) {
         // Already selected → move it to the end (so it becomes the "active" chat)
-        if (prev.find((c) => c.id === chat.id)) {
-          return [...prev.filter((c) => c.id !== chat.id), chat];
+        if (prev.find((c) => c.chat_id === chat.chat_id)) {
+          return [...prev.filter((c) => c.chat_id !== chat.chat_id), chat];
         }
 
         // Limit 2 → drop the oldest and add new
@@ -111,11 +111,20 @@ function Main({ selectedModal, onSelect }) {
       }
     });
   }
+  function onCancleSelect(chat_id) {
+    if (!chat_id) return;
+    console.log(chat_id);
+    setSelectedUser((prev) => {
+      if (selectedUser.find((c) => c.chat_id === chat_id)) {
+        return [...prev.filter((c) => c.chat_id !== chat_id)];
+      }
+    });
+  }
 
   return (
     <main className="border border-[var(--border)] bg-[#0104099e] h-[90.5vh] rounded-b-lg flex overflow-hidden">
       <ChatList onSelect={setOnselectUser} selectedUser={selectedUser} />
-      <ChatArea users={selectedUser} onSelect={setSelectedUser} />
+      <ChatArea users={selectedUser} onCancleSelect={onCancleSelect} />
       {selectedModal == "account" && (
         <div
           id="overlay"
