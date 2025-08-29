@@ -9,11 +9,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 
 function Main({ selectedModal, onSelect }) {
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  console.log(selectedUser);
   function handleOverlayClick(e) {
     if (e.target.id === "overlay") {
-      onSelect(null);
+      onSelect([]);
     }
   }
 
@@ -89,10 +90,32 @@ function Main({ selectedModal, onSelect }) {
     get_current_user();
   }, []);
 
+  function setOnselectUser(chat) {
+    setSelectedUser((prev) => {
+      if (!prev) return [chat];
+
+      if (currentUser?.is_pro) {
+        // Already selected → move it to the end (so it becomes the "active" chat)
+        if (prev.find((c) => c.id === chat.id)) {
+          return [...prev.filter((c) => c.id !== chat.id), chat];
+        }
+
+        // Limit 2 → drop the oldest and add new
+        if (prev.length >= 2) {
+          return [prev[1], chat];
+        }
+        // Normal add
+        return [...prev, chat];
+      } else {
+        return [chat];
+      }
+    });
+  }
+
   return (
     <main className="border border-[var(--border)] bg-[#0104099e] h-[90.5vh] rounded-b-lg flex overflow-hidden">
-      <ChatList onSelect={setSelectedUser} selectedUser={selectedUser} />
-      <ChatArea user={selectedUser} onSelect={setSelectedUser} />
+      <ChatList onSelect={setOnselectUser} selectedUser={selectedUser} />
+      <ChatArea users={selectedUser} onSelect={setSelectedUser} />
       {selectedModal == "account" && (
         <div
           id="overlay"
