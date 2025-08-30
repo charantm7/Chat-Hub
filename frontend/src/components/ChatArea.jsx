@@ -1423,6 +1423,7 @@ function ChatArea({ user, onSelect }) {
       </div>
 
       {/* Input Area */}
+
       <div className="flex items-center  justify-evenly  pb-3 pt-3 w-[99%] z-1">
         <div className="flex flex-col border-1 border-[#ffffff39] w-[93%]  rounded-md  ">
           {replyMessage && (
