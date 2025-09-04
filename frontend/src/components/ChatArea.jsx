@@ -86,6 +86,7 @@ function ChatArea({ users, onCancleSelect }) {
   // console.log("reply", currentUserID);
   // const chatMessages = messages[user?.chat_id] || [];
   const sortedMessages = [{}];
+  console.log("messages", messages);
   // [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   // function handleOverlayClick(e) {
@@ -104,27 +105,27 @@ function ChatArea({ users, onCancleSelect }) {
   //   }
   // }, [chatMessages]);
 
-  // useEffect(() => {
-  //   const init = async () => {
-  //     const t = await GetValidAccessToken();
-  //     setToken(t);
+  useEffect(() => {
+    const init = async () => {
+      const t = await GetValidAccessToken();
+      setToken(t);
 
-  //     if (t) {
-  //       try {
-  //         const res = await fetch("http://127.0.0.1:8000/", {
-  //           headers: { Authorization: `Bearer ${t}` },
-  //         });
-  //         if (!res.ok) throw new Error("Unauthorized");
-  //         const data = await res.json();
-  //         setCurrentUserID(data);
-  //       } catch (err) {
-  //         console.error(err);
-  //       }
-  //     }
-  //   };
+      if (t) {
+        try {
+          const res = await fetch("http://127.0.0.1:8000/", {
+            headers: { Authorization: `Bearer ${t}` },
+          });
+          if (!res.ok) throw new Error("Unauthorized");
+          const data = await res.json();
+          setCurrentUserID(data);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
 
-  //   init();
-  // }, []);
+    init();
+  }, []);
   // useEffect(() => {
   //   const handleClickOutside = () => {
   //     if (contextMenu.msgId !== null) {
@@ -136,24 +137,32 @@ function ChatArea({ users, onCancleSelect }) {
   //   return () => window.removeEventListener("click", handleClickOutside);
   // }, [contextMenu]);
 
-  // useEffect(() => {
-  //   if (!token || !user?.chat_id) return;
-  //   (async () => {
-  //     try {
-  //       const res = await fetch(`http://127.0.0.1:8000/v1/chat/${user.chat_id}/message`, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-  //       if (!res.ok) throw new Error("Failed to load messages");
-  //       const data = await res.json();
-  //       setMessages((prev) => ({
-  //         ...prev,
-  //         [user.chat_id]: Array.isArray(data.messages) ? data.messages : [],
-  //       }));
-  //     } catch (err) {
-  //       console.error(err);
-  //     }
-  //   })();
-  // }, [token, user?.chat_id]);
+  useEffect(() => {
+    if (!token || !users?.length) return;
+    (async () => {
+      try {
+        const results = await Promise.all(
+          users.map(async (user) => {
+            const res = await fetch(`http://127.0.0.1:8000/v1/chat/${user.chat_id}/message`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error("Failed to load messages");
+            const data = await res.json();
+            return { chatId: user.chat_id, messages: data.messages ?? [] };
+          })
+        );
+
+        const newMessages = results.reduce((acc, { chatId, messages }) => {
+          acc[chatId] = messages;
+          return acc;
+        }, {});
+
+        setMessages((prev) => ({ ...prev, ...newMessages }));
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [token, users]);
 
   // useEffect(() => {
   //   if (!token || !user?.chat_id) return;
@@ -993,7 +1002,7 @@ function ChatArea({ users, onCancleSelect }) {
                   currentUserID?.is_pro ? "w-[94%]" : "w-[100%]"
                 } p-3 flex-1  overflow-y-auto  hide-scrollbar`}
               >
-                {sortedMessages.map((msg, i) => {
+                {(messages[user.chat_id] ?? []).map((msg, i) => {
                   const prevMsg = i > 0 ? sortedMessages[i - 1] : null;
                   const isCurrentUser = msg.sender_id === currentUserID?.id;
                   const showAvatar = !prevMsg || prevMsg.sender_id !== msg.sender_id;
@@ -1256,9 +1265,9 @@ function ChatArea({ users, onCancleSelect }) {
                                         <div className="flex items-center gap-1">
                                           <span className="text-[10px] text-gray-300">{msg.file_type}</span>
                                           <span className="text-[10px] text-gray-300">•</span>
-                                          <span className="text-[10px] text-gray-300">
+                                          {/* <span className="text-[10px] text-gray-300">
                                             {formatFileSize(Number(msg.size))}
-                                          </span>
+                                          </span> */}
                                         </div>
                                       </div>
                                     </div>
