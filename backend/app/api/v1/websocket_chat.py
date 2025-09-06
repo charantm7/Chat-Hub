@@ -11,24 +11,21 @@ from app.core.websocket import manager
 ws_chat = APIRouter()
 
 
-@ws_chat.websocket('/{chat_id}')
-async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Depends(get_db)):
+@ws_chat.websocket('/{current_user_id}')
+async def websocket_chat(current_user_id: int, websocket: WebSocket,  db: Session = Depends(get_db)):
 
     print("connected")
 
     current_user = await get_current_user_ws(websocket=websocket, db=db)
 
     print("authenticated")
-    print(current_user)
-    member = db.query(ChatMembers).filter(
-        ChatMembers.chat_id == chat_id, ChatMembers.user_id == current_user.id).first()
 
-    if not member:
+    if current_user.id != current_user_id:
         await websocket.close(code=1008)
 
         return
 
-    await manager.connect(chat_id=chat_id, websocket=websocket, user_id=member.user_id)
+    await manager.connect(chat_id=current_user_id, websocket=websocket, user_id=current_user_id)
 
     try:
 
@@ -38,7 +35,11 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
             content = data.get('data')
             message_type = data.get('type')
-
+            chat_id = data.get('chat_id')
+            members = db.query(ChatMembers.user_id).filter(
+                ChatMembers.chat_id == chat_id).all()
+            user_ids = [m.user_id for m in members]
+            print(data)
             if message_type == 'message_read':
 
                 message_ids = data.get('message_ids')
@@ -55,6 +56,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
                 await manager.broadcast(
                     chat_id,
+                    user_ids,
                     {"type": 'message_read',
                      'chat_id': chat_ids,
                      'message_ids': message_ids}
@@ -66,7 +68,10 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                 isTyping = data.get('isTyping')
 
                 await manager.broadcast(
-                    chat_id, {
+                    chat_id,
+                    user_ids,
+
+                    {
                         'type': 'typing',
                         'sender_id': sender_id,
                         'isTyping': isTyping
@@ -84,7 +89,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                 size = content['size']
                 is_group = data.get("is_group")
                 sender = content['sender']
-                print(sender)
+
                 file_message = db.query(Message).filter(
                     Message.unique_name == unique_name).one_or_none()
 
@@ -92,6 +97,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
                     await manager.broadcast(
                         chat_id,
+                        user_ids,
                         {"type": message_type,
                             "id": str(file_message.id),
                             "sender_id": current_user.id,
@@ -172,6 +178,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                     brodcast_message.update({
                         "type": message_type,
                         "id": str(new_message.id),
+                        "chat_id": str(chat_id),
                         "sender_id": current_user.id,
                         "sender_name": current_user.name,
                         "sender": {
@@ -192,8 +199,9 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
 
                 await manager.broadcast(
                     chat_id,
+                    user_ids,
                     brodcast_message
                 )
     except WebSocketDisconnect:
         await manager.disconnect(
-            chat_id=chat_id, websocket=websocket, user_id=member.user_id)
+            chat_id=chat_id, websocket=websocket, user_id=current_user_id)

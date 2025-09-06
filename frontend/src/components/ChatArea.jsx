@@ -66,7 +66,7 @@ function showNotification(title, body) {
 
 function ChatArea({ users, onCancleSelect }) {
   const [messages, setMessages] = useState({});
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState({});
   const [token, setToken] = useState(null);
   const [currentUserID, setCurrentUserID] = useState(null);
   const [showModal, setShowModal] = useState(null);
@@ -84,8 +84,10 @@ function ChatArea({ users, onCancleSelect }) {
     msgId: null,
   });
   // console.log("reply", currentUserID);
-  // const chatMessages = messages[user?.chat_id] || [];
-  const sortedMessages = [{}];
+  const chatIDs = users?.map((user) => user.chat_id);
+
+  const chatMessages = chatIDs.flatMap((id) => messages[id] || []);
+  const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
   console.log("messages", messages);
   // [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -98,12 +100,11 @@ function ChatArea({ users, onCancleSelect }) {
   //   }
   // }
 
-  // const prevChatId = useRef(null);
-  // useEffect(() => {
-  //   if (messagesEndRef.current) {
-  //     messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-  //   }
-  // }, [chatMessages]);
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [chatMessages]);
 
   useEffect(() => {
     const init = async () => {
@@ -184,165 +185,175 @@ function ChatArea({ users, onCancleSelect }) {
   //   markread();
   // }, [token, user?.chat_id]);
 
-  // useEffect(() => {
-  //   if (!token || !user?.chat_id) return;
+  useEffect(() => {
+    if (!token || !currentUserID?.id) return;
 
-  //   socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${user.chat_id}?token=${token}`);
+    socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${currentUserID.id}?token=${token}`);
 
-  //   socketRef.current.onopen = () => console.log("WebSocket connected");
+    socketRef.current.onopen = () => {
+      console.log("WebSocket connected for user:", currentUserID.id);
+    };
 
-  //   socketRef.current.onmessage = (event) => {
-  //     const msg = JSON.parse(event.data);
-  //     console.log("Received:", msg);
+    socketRef.current.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      console.log("Received:", msg);
 
-  //     switch (msg.type) {
-  //       case "typing":
-  //         if (msg.sender_id !== currentUserID?.id) {
-  //           if (msg.isTyping) {
-  //             setTypingUser((prev) => [...prev.filter((u) => u !== msg.sender_id), msg.sender_id]);
-  //           } else {
-  //             setTypingUser((prev) => prev.filter((u) => u != msg.sender_id));
-  //           }
-  //         }
-  //         break;
+      switch (msg.type) {
+        case "typing":
+          if (msg.sender_id !== currentUserID.id) {
+            setTypingUser((prev) =>
+              msg.isTyping
+                ? [...prev.filter((u) => u !== msg.sender_id), msg.sender_id]
+                : prev.filter((u) => u !== msg.sender_id)
+            );
+          }
+          break;
 
-  //       case "message_read":
-  //         setMessages((prev) => {
-  //           const updated = { ...prev };
-  //           const chatId = user?.chat_id;
-  //           if (!chatId || !updated[chatId]) return prev;
+        case "message_read":
+          setMessages((prev) => {
+            const updated = { ...prev };
+            const chatId = msg.chat_id;
+            if (!chatId || !updated[chatId]) return prev;
 
-  //           const ids = msg.message_ids || [];
-  //           updated[chatId] = updated[chatId].map((m) => (ids.includes(m.id) ? { ...m, read: true } : m));
+            const ids = msg.message_ids || [];
+            updated[chatId] = updated[chatId].map((m) => (ids.includes(m.id) ? { ...m, read: true } : m));
+            return updated;
+          });
+          break;
 
-  //           return updated;
-  //         });
-  //         break;
+        case "message_edit":
+          setMessages((prev) => {
+            const updated = { ...prev };
+            updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
+              m.id === msg.message_id ? { ...m, content: msg.content } : m
+            );
+            return updated;
+          });
+          break;
 
-  //       case "message_edit":
-  //         setMessages((prev) => {
-  //           const updated = { ...prev };
-  //           updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
-  //             m.id === msg.message_id ? { ...m, content: msg.content } : m
-  //           );
-  //           return updated;
-  //         });
+        case "delete_message":
+          setMessages((prev) => {
+            const updated = { ...prev };
+            updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
+              m.id === msg.message_id ? { ...m, is_deleted: true } : m
+            );
+            return updated;
+          });
+          break;
 
-  //         break;
+        default:
+          if (msg.Message) return;
 
-  //       case "delete_message":
-  //         setMessages((prev) => {
-  //           const updated = { ...prev };
-  //           updated[msg.chat_id] = updated[msg.chat_id].map((m) =>
-  //             m.id === msg.message_id ? { ...m, is_deleted: true } : m
-  //           );
-  //           return updated;
-  //         });
-  //         break;
+          // 🔔 desktop notification
+          if (document.hidden) {
+            showNotification("New Message", msg.content);
+          }
 
-  //       default:
-  //         if (msg.Message) return;
+          // store messages per chat_id
+          setMessages((prev) => {
+            const chatId = msg.chat_id;
+            if (!chatId) return prev;
 
-  //         if (document.hidden) {
-  //           console.log("tryingg");
-  //           showNotification("New Message", msg.content);
-  //           console.log("notification sent");
-  //         }
+            const previous = prev[chatId] || [];
 
-  //         setMessages((prev) => {
-  //           const chatId = user?.chat_id;
-  //           if (!chatId) return prev;
+            const incomingMsg = {
+              ...msg,
+              sent_at: msg.sent_at || msg.timestamp,
+              content: msg.content || msg.message,
+            };
 
-  //           const previous = prev[chatId] || [];
+            const existingIndex = previous.findIndex(
+              (m) =>
+                m.sender_id === incomingMsg.sender_id &&
+                m.content === incomingMsg.content &&
+                m.id?.startsWith("temp-")
+            );
 
-  //           const incomingMsg = {
-  //             ...msg,
-  //             sent_at: msg.sent_at || msg.timestamp,
-  //             content: msg.content || msg.message,
-  //           };
+            let updated;
+            if (existingIndex !== -1) {
+              updated = [...previous];
+              updated[existingIndex] = incomingMsg;
+            } else if (!previous.some((m) => m.id === incomingMsg.id)) {
+              updated = [...previous, incomingMsg];
+            } else {
+              updated = previous;
+            }
 
-  //           const existingIndex = previous.findIndex(
-  //             (m) =>
-  //               m.sender_id === incomingMsg.sender_id &&
-  //               m.content === incomingMsg.content &&
-  //               m.id?.startsWith("temp-")
-  //           );
+            updated.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+            return { ...prev, [chatId]: updated };
+          });
+      }
+    };
 
-  //           let updated;
-  //           if (existingIndex !== -1) {
-  //             updated = [...previous];
-  //             updated[existingIndex] = incomingMsg;
-  //           } else if (!previous.some((m) => m.id === incomingMsg.id)) {
-  //             updated = [...previous, incomingMsg];
-  //           } else {
-  //             updated = previous;
-  //           }
+    socketRef.current.onclose = () => {
+      console.log("WebSocket closed, retrying...");
+      setTimeout(() => {
+        if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+          socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${currentUserID.id}?token=${token}`);
+        }
+      }, 3000);
+    };
 
-  //           updated.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-  //           return { ...prev, [chatId]: updated };
-  //         });
+    return () => {
+      socketRef.current?.close();
+      socketRef.current = null;
+      setTypingUser([]);
+    };
+  }, [token, currentUserID?.id]);
 
-  //         if (document.hidden) {
-  //           console.log("tryingg");
-  //           showNotification("New Message", msg.content);
-  //           console.log("notification sent");
-  //         }
-  //     }
-  //   };
+  const sendMessage = (chat_id, is_group) => {
+    if (!input[chat_id].trim()) return;
 
-  //   socketRef.current.onclose = () => console.log("WebSocket closed");
-  //   return () => {
-  //     socketRef.current?.close();
-  //     setTypingUser([]);
-  //   };
-  // }, [token, user?.chat_id, currentUserID?.id]);
+    const newMsg = {
+      id: "temp-" + crypto.randomUUID(),
+      sender_id: currentUserID?.id,
+      sender_name: currentUserID?.name,
+      content: input[chat_id],
+      chat_id: chat_id,
+      sent_at: new Date().toISOString(),
+      is_deleted: false,
+      reply_to: replyMessage?.replyMsgId || false,
+      sender: {
+        picture: currentUserID?.picture,
+      },
+    };
 
-  // const sendMessage = () => {
-  //   if (!input.trim()) return;
+    setMessages((prev) => {
+      const previous = prev[chat_id] || [];
+      return {
+        ...prev,
+        [chat_id]: [...previous, newMsg],
+      };
+    });
 
-  //   const newMsg = {
-  //     id: "temp-" + crypto.randomUUID(),
-  //     sender_id: currentUserID?.id,
-  //     sender_name: currentUserID?.name,
-  //     content: input,
-  //     chat_id: user?.chat_id,
-  //     sent_at: new Date().toISOString(),
-  //     is_deleted: false,
-  //     reply_to: replyMessage?.replyMsgId || false,
-  //     sender: {
-  //       picture: currentUserID?.picture,
-  //     },
-  //   };
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({
+          data: input[chat_id],
+          chat_id: chat_id,
+          sender_id: currentUserID?.id,
+          type: "message",
+          reply_to: replyMessage?.replyMsgId || false,
+          is_group: is_group,
+        })
+      );
+      setReplyMessage(null);
 
-  //   setMessages((prev) => {
-  //     const previous = prev[user?.chat_id] || [];
-  //     return {
-  //       ...prev,
-  //       [user?.chat_id]: [...previous, newMsg],
-  //     };
-  //   });
+      socketRef.current.send(
+        JSON.stringify({
+          type: "typing",
+          chat_id: chat_id,
+          isTyping: false,
+          sender_id: currentUserID?.id,
+        })
+      );
+    }
 
-  //   if (socketRef.current?.readyState === WebSocket.OPEN) {
-  //     socketRef.current.send(
-  //       JSON.stringify({
-  //         data: input,
-  //         type: "message",
-  //         reply_to: replyMessage?.replyMsgId || false,
-  //         is_group: user?.is_group,
-  //       })
-  //     );
-  //     setReplyMessage(null);
-
-  //     socketRef.current.send(
-  //       JSON.stringify({
-  //         type: "typing",
-  //         isTyping: false,
-  //       })
-  //     );
-  //   }
-
-  //   setInput("");
-  // };
+    setInput((prev) => ({
+      ...prev,
+      [chat_id]: "",
+    }));
+  };
 
   // const getUnreadMessage = () => {
   //   const chatId = user?.chat_id;
@@ -379,10 +390,10 @@ function ChatArea({ users, onCancleSelect }) {
   //     .forEach((m) => sendReadReceipt(m.id));
   // }, [messages, user?.chat_id]);
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e, chat_id, is_group) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      sendMessage(chat_id, is_group);
     }
   };
   // const handleMessageSend = () => {
@@ -499,13 +510,13 @@ function ChatArea({ users, onCancleSelect }) {
   //   }
   // };
 
-  // function formatFileSize(bytes) {
-  //   if (bytes == null || isNaN(bytes)) return "-";
-  //   if (bytes === 0) return "0 B";
-  //   const sizes = ["B", "KB", "MB", "GB", "TB"];
-  //   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  //   return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
-  // }
+  function formatFileSize(bytes) {
+    if (bytes == null || isNaN(bytes)) return "-";
+    if (bytes === 0) return "0 B";
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
+  }
 
   // function handleInfo(message_id) {
   //   setShowModal("msg_info");
@@ -589,372 +600,372 @@ function ChatArea({ users, onCancleSelect }) {
   //   return { x, y };
   // };
 
-  // const ImageMessage = React.memo(
-  //   ({
-  //     type,
-  //     id,
-  //     sender_id,
-  //     sender_name,
-  //     sender_picture,
-  //     content,
-  //     sent_at,
-  //     sent_time,
-  //     is_read,
-  //     is_deleted,
-  //     reply_to,
-  //     reply_content,
-  //     reply_file_name,
-  //     reply_file_type,
-  //     reply_file_url,
-  //     is_group,
-  //     reply_sender_id,
-  //     reply_sender_name,
-  //     file_type,
-  //     file_url,
-  //     file_name,
-  //     size,
-  //     read,
-  //     isCurrentUser,
-  //     showAvatar,
-  //   }) => (
-  //     <div
-  //       className={`relative min-w-[20%] max-w-[30%] inline-block
-  //                      text-white `}
-  //     >
-  //       <div className="flex items-end gap-3">
-  //         {!isCurrentUser && showAvatar ? (
-  //           <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
-  //         ) : (
-  //           <div className="w-8"></div>
-  //         )}
-  //         <div
-  //           className={`w-[100%] ${
-  //             sender_id === currentUserID?.id
-  //               ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40  border border-white/10 text-white  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-  //               : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-  //           } text-white p-[2px]  `}
-  //           onContextMenu={(e) => {
-  //             e.preventDefault();
-  //             const { x, y } = getContextMenuXY(e.pageX, e.pageY);
-  //             setContextMenu({
-  //               x,
-  //               y,
-  //               msgId: id,
-  //               senderId: sender_id,
-  //               file_type: file_type,
-  //               file_url: file_url,
-  //               file_name: file_name,
-  //               file_size: size,
-  //             });
-  //           }}
-  //         >
-  //           <a href={file_url}>
-  //             <img
-  //               src={file_url}
-  //               alt={file_name}
-  //               className={` ${
-  //                 sender_id === currentUserID?.id
-  //                   ? " rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-  //                   : "rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-  //               } `}
-  //             />
-  //             <span
-  //               className={`absolute bottom-1 ${
-  //                 sender_id === currentUserID?.id ? "right-18" : "right-2"
-  //               }  text-[11px] text-gray-300 `}
-  //               style={{ textShadow: "1px 1px 2px black" }}
-  //             >
-  //               {sent_time}
-  //             </span>
+  const ImageMessage = React.memo(
+    ({
+      type,
+      id,
+      sender_id,
+      sender_name,
+      sender_picture,
+      content,
+      sent_at,
+      sent_time,
+      is_read,
+      is_deleted,
+      reply_to,
+      reply_content,
+      reply_file_name,
+      reply_file_type,
+      reply_file_url,
+      is_group,
+      reply_sender_id,
+      reply_sender_name,
+      file_type,
+      file_url,
+      file_name,
+      size,
+      read,
+      isCurrentUser,
+      showAvatar,
+    }) => (
+      <div
+        className={`relative min-w-[20%] max-w-[30%] inline-block
+                       text-white `}
+      >
+        <div className="flex items-end gap-3">
+          {!isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-8"></div>
+          )}
+          <div
+            className={`w-[100%] ${
+              sender_id === currentUserID?.id
+                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40  border border-white/10 text-white  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+            } text-white p-[2px]  `}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              const { x, y } = getContextMenuXY(e.pageX, e.pageY);
+              setContextMenu({
+                x,
+                y,
+                msgId: id,
+                senderId: sender_id,
+                file_type: file_type,
+                file_url: file_url,
+                file_name: file_name,
+                file_size: size,
+              });
+            }}
+          >
+            <a href={file_url}>
+              <img
+                src={file_url}
+                alt={file_name}
+                className={` ${
+                  sender_id === currentUserID?.id
+                    ? " rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                    : "rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                } `}
+              />
+              <span
+                className={`absolute bottom-1 ${
+                  sender_id === currentUserID?.id ? "right-18" : "right-2"
+                }  text-[11px] text-gray-300 `}
+                style={{ textShadow: "1px 1px 2px black" }}
+              >
+                {sent_time}
+              </span>
 
-  //             {sender_id === currentUserID?.id && (
-  //               <>
-  //                 {read | is_read ? (
-  //                   <span className="absolute bottom-1 right-14 text-[14px] text-gray-300">
-  //                     <FontAwesomeIcon icon={faCheckDouble} />
-  //                   </span>
-  //                 ) : (
-  //                   <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-  //                     <FontAwesomeIcon icon={faCheck} />
-  //                   </span>
-  //                 )}
-  //               </>
-  //             )}
-  //           </a>
-  //         </div>
-  //         {isCurrentUser && showAvatar ? (
-  //           <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
-  //         ) : (
-  //           <div className="w-8"></div>
-  //         )}
-  //       </div>
-  //     </div>
-  //   )
-  // );
-  // const FileMessage = React.memo(
-  //   ({
-  //     type,
-  //     id,
-  //     sender_id,
-  //     sender_name,
-  //     sender_picture,
-  //     content,
-  //     sent_at,
-  //     sent_time,
-  //     is_read,
-  //     is_deleted,
-  //     reply_to,
-  //     reply_content,
-  //     reply_file_name,
-  //     reply_file_type,
-  //     reply_file_url,
-  //     is_group,
-  //     reply_sender_id,
-  //     reply_sender_name,
-  //     file_type,
-  //     file_url,
-  //     file_name,
-  //     size,
-  //     read,
-  //     isCurrentUser,
-  //     showAvatar,
-  //   }) => (
-  //     <div
-  //       className={`relative min-w-[16%] max-w-[70%] inline-block
-  //                      text-white `}
-  //     >
-  //       <div className={`flex items-end gap-3`}>
-  //         {!isCurrentUser && showAvatar ? (
-  //           <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
-  //         ) : (
-  //           <div className="w-8"></div>
-  //         )}
-  //         <div
-  //           className={`w-[100%] ${
-  //             sender_id === currentUserID?.id
-  //               ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40  border border-white/10 text-white  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-  //               : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-  //           } text-white pr-[5px] pl-[5px] pt-[5px] pb-[28px]  break-words`}
-  //           onContextMenu={(e) => {
-  //             e.preventDefault();
-  //             const { x, y } = getContextMenuXY(e.pageX, e.pageY);
-  //             setContextMenu({
-  //               x,
-  //               y,
-  //               msgId: id,
-  //               senderId: sender_id,
-  //               file_type: file_type,
-  //               file_url: file_url,
-  //               file_name: file_name,
-  //               file_size: size,
-  //             });
-  //           }}
-  //         >
-  //           <a href={file_url} target="_blank" rel="noopener noreferrer">
-  //             <div
-  //               className={` p-2 flex gap-2 items-center  ${
-  //                 sender_id === currentUserID?.id
-  //                   ? "bg-gradient-to-br from-blue-500/70 to-blue-600/10  border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-  //                   : "bg-gradient-to-br from-gray-600/50 to-gray-900/10  border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-  //               }`}
-  //             >
-  //               <FileIcons type={file_type} size={28} className="text-white" />
+              {sender_id === currentUserID?.id && (
+                <>
+                  {read | is_read ? (
+                    <span className="absolute bottom-1 right-14 text-[14px] text-gray-300">
+                      <FontAwesomeIcon icon={faCheckDouble} />
+                    </span>
+                  ) : (
+                    <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                      <FontAwesomeIcon icon={faCheck} />
+                    </span>
+                  )}
+                </>
+              )}
+            </a>
+          </div>
+          {isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-8"></div>
+          )}
+        </div>
+      </div>
+    )
+  );
+  const FileMessage = React.memo(
+    ({
+      type,
+      id,
+      sender_id,
+      sender_name,
+      sender_picture,
+      content,
+      sent_at,
+      sent_time,
+      is_read,
+      is_deleted,
+      reply_to,
+      reply_content,
+      reply_file_name,
+      reply_file_type,
+      reply_file_url,
+      is_group,
+      reply_sender_id,
+      reply_sender_name,
+      file_type,
+      file_url,
+      file_name,
+      size,
+      read,
+      isCurrentUser,
+      showAvatar,
+    }) => (
+      <div
+        className={`relative min-w-[16%] max-w-[70%] inline-block
+                       text-white `}
+      >
+        <div className={`flex items-end gap-3`}>
+          {!isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-8"></div>
+          )}
+          <div
+            className={`w-[100%] ${
+              sender_id === currentUserID?.id
+                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40  border border-white/10 text-white  text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+            } text-white pr-[5px] pl-[5px] pt-[5px] pb-[28px]  break-words`}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              const { x, y } = getContextMenuXY(e.pageX, e.pageY);
+              setContextMenu({
+                x,
+                y,
+                msgId: id,
+                senderId: sender_id,
+                file_type: file_type,
+                file_url: file_url,
+                file_name: file_name,
+                file_size: size,
+              });
+            }}
+          >
+            <a href={file_url} target="_blank" rel="noopener noreferrer">
+              <div
+                className={` p-2 flex gap-2 items-center  ${
+                  sender_id === currentUserID?.id
+                    ? "bg-gradient-to-br from-blue-500/70 to-blue-600/10  border border-white/10 text-white rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                    : "bg-gradient-to-br from-gray-600/50 to-gray-900/10  border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+                }`}
+              >
+                <FileIcons type={file_type} size={28} className="text-white" />
 
-  //               <div className="flex flex-col gap-1">
-  //                 <p className="text-[13.5px]">{file_name}</p>
-  //                 <div className="flex items-center gap-1">
-  //                   <span className="text-[10px] text-gray-300">{file_type}</span>
-  //                   <span className="text-[10px] text-gray-300">•</span>
-  //                   <span className="text-[10px] text-gray-300">{formatFileSize(Number(size))}</span>
-  //                 </div>
-  //               </div>
-  //             </div>
-  //           </a>
-  //           <span
-  //             className={`absolute bottom-1 ${
-  //               sender_id === currentUserID?.id ? "right-18" : "right-2"
-  //             }  text-[11px] text-gray-300`}
-  //           >
-  //             {sent_time}
-  //           </span>
-  //           {sender_id === currentUserID?.id && (
-  //             <>
-  //               {read || is_read ? (
-  //                 <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-  //                   <FontAwesomeIcon icon={faCheckDouble} />
-  //                 </span>
-  //               ) : (
-  //                 <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-  //                   <FontAwesomeIcon icon={faCheck} />
-  //                 </span>
-  //               )}
-  //             </>
-  //           )}
-  //         </div>
-  //         {isCurrentUser && showAvatar ? (
-  //           <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
-  //         ) : (
-  //           <div className="w-8"></div>
-  //         )}
-  //       </div>
-  //     </div>
-  //   )
-  // );
+                <div className="flex flex-col gap-1">
+                  <p className="text-[13.5px]">{file_name}</p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-gray-300">{file_type}</span>
+                    <span className="text-[10px] text-gray-300">•</span>
+                    <span className="text-[10px] text-gray-300">{formatFileSize(Number(size))}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+            <span
+              className={`absolute bottom-1 ${
+                sender_id === currentUserID?.id ? "right-18" : "right-2"
+              }  text-[11px] text-gray-300`}
+            >
+              {sent_time}
+            </span>
+            {sender_id === currentUserID?.id && (
+              <>
+                {read || is_read ? (
+                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                    <FontAwesomeIcon icon={faCheckDouble} />
+                  </span>
+                ) : (
+                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                    <FontAwesomeIcon icon={faCheck} />
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+          {isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-8"></div>
+          )}
+        </div>
+      </div>
+    )
+  );
 
-  // const TextMessage = React.memo(
-  //   ({
-  //     type,
-  //     id,
-  //     sender_id,
-  //     sender_name,
-  //     sender_picture,
-  //     content,
-  //     sent_at,
-  //     sent_time,
-  //     is_read,
-  //     is_deleted,
-  //     reply_to,
-  //     reply_content,
-  //     reply_file_name,
-  //     reply_file_type,
-  //     reply_file_url,
-  //     is_group,
-  //     reply_sender_id,
-  //     reply_sender_name,
-  //     file_type,
-  //     file_url,
-  //     file_name,
-  //     size,
-  //     read,
-  //     isCurrentUser,
-  //     showAvatar,
-  //   }) => (
-  //     <div
-  //       className={`relative min-w-[16%] max-w-[70%] inline-block
-  //                      text-white `}
-  //     >
-  //       <div className={`flex items-end gap-3 `}>
-  //         {!isCurrentUser && showAvatar ? (
-  //           <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
-  //         ) : (
-  //           <div className="w-10"></div>
-  //         )}
-  //         <div
-  //           className={` w-[100%] ${
-  //             sender_id === currentUserID?.id
-  //               ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 border border-white/10 text-white text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
-  //               : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
-  //           } text-white pr-[5px] pl-[5px] pt-[5px] pb-[10px]  `}
-  //           onContextMenu={(e) => {
-  //             e.preventDefault();
-  //             const { x, y } = getContextMenuXY(e.pageX, e.pageY);
-  //             setContextMenu({
-  //               x,
-  //               y,
-  //               msgId: id,
-  //               senderId: sender_id,
-  //               msgInfo: content,
-  //             });
-  //           }}
-  //         >
-  //           {" "}
-  //           <span className="flex flex-col gap-1">
-  //             {reply_to && (
-  //               <span
-  //                 className={` flex ${
-  //                   sender_id === currentUserID?.id
-  //                     ? "bg-gradient-to-br from-blue-500/70 to-blue-600/10  border border-white/10 text-white rounded-br-[6px] rounded-bl-[6px] rounded-tl-[6px] "
-  //                     : "bg-gradient-to-br from-gray-600/50 to-gray-900/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[6px] rounded-bl-[6px] rounded-tr-[6px]"
-  //                 }`}
-  //               >
-  //                 {reply_file_url ? (
-  //                   reply_file_type.startsWith("image/") ? (
-  //                     <div className="flex w-[100%] gap-2">
-  //                       <div
-  //                         className={`bg-[#ffffffcf] ${
-  //                           sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
-  //                         }  w-[8px] `}
-  //                       ></div>
-  //                       <div className="flex justify-between gap-2 w-[100%]">
-  //                         {reply_sender_id === currentUserID?.id ? (
-  //                           <p className="mt-2 text-[12px]">You</p>
-  //                         ) : (
-  //                           <p className="mt-2 text-[12px]">{reply_sender_name}</p>
-  //                         )}
-  //                         <img src={reply_file_url} alt={reply_file_name} className="max-h-15 rounded-md" />
-  //                       </div>
-  //                     </div>
-  //                   ) : (
-  //                     <div className="flex gap-2">
-  //                       <div
-  //                         className={`bg-[#ffffffcf] ${
-  //                           sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
-  //                         }  w-[8px] `}
-  //                       ></div>
-  //                       <div className="pb-2">
-  //                         {reply_sender_id === currentUserID?.id ? (
-  //                           <p className="mt-2 text-[12px]">You</p>
-  //                         ) : (
-  //                           <p className="mt-2 text-[12px]">{reply_sender_name}</p>
-  //                         )}
-  //                         <div className="flex items-center">
-  //                           <FileIcons type={reply_file_type} size={23} className="text-white" />
-  //                           <span className="p-2 text-[14px]">{reply_file_name}</span>
-  //                         </div>
-  //                       </div>
-  //                     </div>
-  //                   )
-  //                 ) : (
-  //                   <div className="flex gap-2">
-  //                     <div
-  //                       className={`bg-[#ffffffcf] ${
-  //                         sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
-  //                       }  w-[8px] `}
-  //                     ></div>
-  //                     <div className="pb-2">
-  //                       {reply_sender_id === currentUserID?.id ? (
-  //                         <p className="mt-2 text-[12px]">You</p>
-  //                       ) : (
-  //                         <p className="mt-2 text-[12px]">{reply_sender_name}</p>
-  //                       )}
-  //                       <span className="pr-2  text-[13.5px]">{reply_content}</span>
-  //                     </div>
-  //                   </div>
-  //                 )}
-  //               </span>
-  //             )}
-  //             <span className="pr-20 pl-2 pt-1 text-[14px]">{content}</span>
-  //           </span>
-  //           <span
-  //             className={`absolute bottom-1 ${
-  //               sender_id === currentUserID?.id ? "right-18" : "right-2"
-  //             }  text-[11px] text-gray-300`}
-  //           >
-  //             {sent_time}
-  //           </span>
-  //           {sender_id === currentUserID?.id && (
-  //             <>
-  //               {read || is_read ? (
-  //                 <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-  //                   <FontAwesomeIcon icon={faCheckDouble} />
-  //                 </span>
-  //               ) : (
-  //                 <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
-  //                   <FontAwesomeIcon icon={faCheck} />
-  //                 </span>
-  //               )}
-  //             </>
-  //           )}
-  //         </div>
-  //         {isCurrentUser && showAvatar ? (
-  //           <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
-  //         ) : (
-  //           <div className="w-10"></div>
-  //         )}
-  //       </div>
-  //     </div>
-  //   )
-  // );
+  const TextMessage = React.memo(
+    ({
+      type,
+      id,
+      sender_id,
+      sender_name,
+      sender_picture,
+      content,
+      sent_at,
+      sent_time,
+      is_read,
+      is_deleted,
+      reply_to,
+      reply_content,
+      reply_file_name,
+      reply_file_type,
+      reply_file_url,
+      is_group,
+      reply_sender_id,
+      reply_sender_name,
+      file_type,
+      file_url,
+      file_name,
+      size,
+      read,
+      isCurrentUser,
+      showAvatar,
+    }) => (
+      <div
+        className={`relative min-w-[16%] max-w-[70%] inline-block
+                       text-white `}
+      >
+        <div className={`flex items-end gap-3 `}>
+          {!isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-10"></div>
+          )}
+          <div
+            className={` w-[100%] ${
+              sender_id === currentUserID?.id
+                ? "bg-gradient-to-br from-blue-500/70 to-blue-500/40 border border-white/10 text-white text-left rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px]"
+                : "bg-gradient-to-br from-gray-200/20 to-gray-100/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[7px] rounded-bl-[7px] rounded-tr-[7px]"
+            } text-white pr-[5px] pl-[5px] pt-[5px] pb-[10px]  `}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              const { x, y } = getContextMenuXY(e.pageX, e.pageY);
+              setContextMenu({
+                x,
+                y,
+                msgId: id,
+                senderId: sender_id,
+                msgInfo: content,
+              });
+            }}
+          >
+            {" "}
+            <span className="flex flex-col gap-1">
+              {reply_to && (
+                <span
+                  className={` flex ${
+                    sender_id === currentUserID?.id
+                      ? "bg-gradient-to-br from-blue-500/70 to-blue-600/10  border border-white/10 text-white rounded-br-[6px] rounded-bl-[6px] rounded-tl-[6px] "
+                      : "bg-gradient-to-br from-gray-600/50 to-gray-900/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-br-[6px] rounded-bl-[6px] rounded-tr-[6px]"
+                  }`}
+                >
+                  {reply_file_url ? (
+                    reply_file_type.startsWith("image/") ? (
+                      <div className="flex w-[100%] gap-2">
+                        <div
+                          className={`bg-[#ffffffcf] ${
+                            sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
+                          }  w-[8px] `}
+                        ></div>
+                        <div className="flex justify-between gap-2 w-[100%]">
+                          {reply_sender_id === currentUserID?.id ? (
+                            <p className="mt-2 text-[12px]">You</p>
+                          ) : (
+                            <p className="mt-2 text-[12px]">{reply_sender_name}</p>
+                          )}
+                          <img src={reply_file_url} alt={reply_file_name} className="max-h-15 rounded-md" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <div
+                          className={`bg-[#ffffffcf] ${
+                            sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
+                          }  w-[8px] `}
+                        ></div>
+                        <div className="pb-2">
+                          {reply_sender_id === currentUserID?.id ? (
+                            <p className="mt-2 text-[12px]">You</p>
+                          ) : (
+                            <p className="mt-2 text-[12px]">{reply_sender_name}</p>
+                          )}
+                          <div className="flex items-center">
+                            <FileIcons type={reply_file_type} size={23} className="text-white" />
+                            <span className="p-2 text-[14px]">{reply_file_name}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex gap-2">
+                      <div
+                        className={`bg-[#ffffffcf] ${
+                          sender_id === currentUserID?.id ? "rounded-l-[4px]" : "rounded-bl-[4px]"
+                        }  w-[8px] `}
+                      ></div>
+                      <div className="pb-2">
+                        {reply_sender_id === currentUserID?.id ? (
+                          <p className="mt-2 text-[12px]">You</p>
+                        ) : (
+                          <p className="mt-2 text-[12px]">{reply_sender_name}</p>
+                        )}
+                        <span className="pr-2  text-[13.5px]">{reply_content}</span>
+                      </div>
+                    </div>
+                  )}
+                </span>
+              )}
+              <span className="pr-20 pl-2 pt-1 text-[14px]">{content}</span>
+            </span>
+            <span
+              className={`absolute bottom-1 ${
+                sender_id === currentUserID?.id ? "right-18" : "right-2"
+              }  text-[11px] text-gray-300`}
+            >
+              {sent_time}
+            </span>
+            {sender_id === currentUserID?.id && (
+              <>
+                {read || is_read ? (
+                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                    <FontAwesomeIcon icon={faCheckDouble} />
+                  </span>
+                ) : (
+                  <span className="absolute bottom-1 right-12 text-[14px] text-gray-300">
+                    <FontAwesomeIcon icon={faCheck} />
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+          {isCurrentUser && showAvatar ? (
+            <img src={sender_picture} loading="lazy" className="h-[30px] rounded-[50%]" />
+          ) : (
+            <div className="w-10"></div>
+          )}
+        </div>
+      </div>
+    )
+  );
 
   if (users.length === 0) {
     return (
@@ -963,14 +974,17 @@ function ChatArea({ users, onCancleSelect }) {
       </div>
     );
   }
-  console.log("user", users);
+  console.log("user", sortedMessages);
 
-  const is_pro = false;
+  const is_pro = true;
 
   return (
     <>
       <div className={`flex ${is_pro ? "w-[75%]" : "w-[75%]"} `}>
         {users.map((user) => {
+          const chatMessages = messages[user.chat_id] || [];
+          const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+          console.log("messages", messages);
           return (
             <div className="w-full overflow-hidden bg-[#14171c] border-r-1 border-[#ffffff2c] flex flex-col">
               {/* Header */}
@@ -999,10 +1013,10 @@ function ChatArea({ users, onCancleSelect }) {
               {/* Message Area */}
               <div
                 className={`space-y-3  ${
-                  currentUserID?.is_pro ? "w-[94%]" : "w-[100%]"
+                  currentUserID?.is_pro ? "w-[100%]" : "w-[100%]"
                 } p-3 flex-1  overflow-y-auto  hide-scrollbar`}
               >
-                {(messages[user.chat_id] ?? []).map((msg, i) => {
+                {sortedMessages.map((msg, i) => {
                   const prevMsg = i > 0 ? sortedMessages[i - 1] : null;
                   const isCurrentUser = msg.sender_id === currentUserID?.id;
                   const showAvatar = !prevMsg || prevMsg.sender_id !== msg.sender_id;
@@ -1259,14 +1273,15 @@ function ChatArea({ users, onCancleSelect }) {
                                       }`}
                                     >
                                       <FileIcons type={msg.file_type} size={28} className="text-white" />
-
                                       <div className="flex flex-col gap-1">
-                                        <p className="text-[13.5px]">{msg.file_name}</p>
+                                        <p className="text-[13.5px] overflow-hidden whitespace-nowrap text-ellipsis max-w-[300px]">
+                                          {msg.file_name}
+                                        </p>
                                         <div className="flex items-center gap-1">
                                           <span className="text-[10px] text-gray-300">{msg.file_type}</span>
                                           <span className="text-[10px] text-gray-300">•</span>
                                           {/* <span className="text-[10px] text-gray-300">
-                                            {formatFileSize(Number(msg.size))}
+                                              {formatFileSize(Number(msg.size))}
                                           </span> */}
                                         </div>
                                       </div>
@@ -1367,7 +1382,10 @@ function ChatArea({ users, onCancleSelect }) {
                                                   size={23}
                                                   className="text-white"
                                                 />
-                                                <span className="p-2 text-[14px]">{msg.reply_file_name}</span>
+
+                                                <span className="p-2 text-[14px] overflow-hidden whitespace-nowrap text-ellipsis max-w-[300px]">
+                                                  {msg.reply_file_name}
+                                                </span>
                                               </div>
                                             </div>
                                           </div>
@@ -1536,12 +1554,12 @@ function ChatArea({ users, onCancleSelect }) {
                   <div className="flex w-full bg-[rgba(1,4,9,0.39)] rounded-md items-center text-[#e8e8e8e0] pr-5 pl-4 gap-4  border-[#ffffff39]">
                     <FontAwesomeIcon icon={faFaceSmile} className="text-[20px]" />
                     <input
-                      value={input}
+                      value={input[user?.chat_id] || ""}
                       onChange={(e) => {
-                        setInput(e.target.value);
-                        handleMessageChange(e);
+                        const value = e.target.value;
+                        setInput((prev) => ({ ...prev, [user?.chat_id]: value }));
                       }}
-                      onKeyDown={handleKeyPress}
+                      onKeyDown={(e) => handleKeyPress(e, user?.chat_id, user?.is_group)}
                       placeholder="Write a message..."
                       className="w-full h-[3.5rem] outline-0 bg-transparent text-white"
                     />

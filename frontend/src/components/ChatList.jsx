@@ -180,14 +180,14 @@ const ChatList = ({ onSelect, selectedUser }) => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search"
-          className="bg-[#15191fd1] border-1 outline-0 h-[2.5rem] rounded-[10px] border-[var(--border)] text-md pl-4 pr-2"
+          className="bg-[#15191fd1] border-1 outline-0 h-[2.5rem] rounded-[7px] border-[var(--border)] text-md pl-4 pr-2"
         />
         <div className="flex w-[100%] justify-between items-center ">
           <div className="flex items-center gap-3 ">
             <button
               onClick={() => setFilter("all")}
               type="button"
-              className={`text-sm  border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[10px] cursor-pointer ${
+              className={`text-[13px]  border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[7px] cursor-pointer ${
                 filter === "all" ? "bg-[#ffffff33]" : "bg-0"
               }`}
             >
@@ -196,7 +196,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
             <button
               onClick={() => setFilter("unread")}
               type="button"
-              className={`text-sm cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[10px] ${
+              className={`text-[13px] cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[7px] ${
                 filter === "unread" ? "bg-[#ffffff33]" : "bg-0"
               }`}
             >
@@ -205,18 +205,27 @@ const ChatList = ({ onSelect, selectedUser }) => {
             <button
               onClick={() => setFilter("groups")}
               type="button"
-              className={`text-sm cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[10px] ${
+              className={`text-[13px] cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[7px] ${
                 filter === "groups" ? "bg-[#ffffff33]" : "bg-0"
               }`}
             >
               Group
+            </button>
+            <button
+              onClick={() => setFilter("groups")}
+              type="button"
+              className={`text-[13px] cursor-pointer border-1 border-[var(--border)] pt-1 pb-1 pr-4 pl-4 rounded-[7px] ${
+                filter === "groups" ? "bg-[#ffffff33]" : "bg-0"
+              }`}
+            >
+              Story
             </button>
           </div>
 
           <FontAwesomeIcon
             onClick={() => setShowModal("add")}
             icon={faPenToSquare}
-            className="text-sm border-1 border-[var(--border)] pt-2 pb-2 pr-3 pl-3 rounded-[10px]"
+            className="text-[13px] border-1 border-[var(--border)] pt-2 pb-2 pr-3 pl-3 rounded-[7px]"
           />
         </div>
       </div>
