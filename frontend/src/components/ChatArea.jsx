@@ -318,13 +318,13 @@ function ChatArea({ users, onCancleSelect }) {
       },
     };
 
-    setMessages((prev) => {
-      const previous = prev[chat_id] || [];
-      return {
-        ...prev,
-        [chat_id]: [...previous, newMsg],
-      };
-    });
+    // setMessages((prev) => {
+    //   const previous = prev[chat_id] || [];
+    //   return {
+    //     ...prev,
+    //     [chat_id]: [...previous, newMsg],
+    //   };
+    // });
 
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(

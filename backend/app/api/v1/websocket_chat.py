@@ -187,7 +187,7 @@ async def websocket_chat(current_user_id: int, websocket: WebSocket,  db: Sessio
                         },
                         "content": content,
                         "sent_at": new_message.sent_at.strftime("%I:%M %p"),
-                        "sent_time": new_message.sent_at.strftime("%I:%M %p"),
+                        "sent_time": new_message.sent_at.astimezone().strftime("%I:%M %p"),
                         "is_read": new_message.is_read,
                         "is_deleted": new_message.is_deleted,
                         "is_group": is_group
@@ -196,7 +196,7 @@ async def websocket_chat(current_user_id: int, websocket: WebSocket,  db: Sessio
                 db.add(new_message)
                 db.commit()
                 db.refresh(new_message)
-
+                print(f"user ids to broadcast", user_ids)
                 await manager.broadcast(
                     chat_id,
                     user_ids,
