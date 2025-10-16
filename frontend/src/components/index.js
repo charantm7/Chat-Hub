@@ -17,7 +17,7 @@ export async function refreshAccessToken() {
   }
 
   try {
-    const res = await fetch("http://127.0.0.1:8000/v1/auth/refresh", {
+    const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/v1/auth/refresh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: refresh }),
@@ -60,7 +60,7 @@ export async function GetAllUsers() {
   const token = await GetValidAccessToken();
   if (!token) return null;
   try {
-    const res = await fetch("http://127.0.0.1:8000/v1/auth/get-users", {
+    const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/v1/auth/get-users", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

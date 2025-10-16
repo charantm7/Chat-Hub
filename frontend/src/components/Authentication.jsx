@@ -6,7 +6,7 @@ import HandImg from "../assets/hand-chat.png";
 import { useNavigate } from "react-router-dom";
 import { GetValidAccessToken, logout } from "./index";
 
-const GOOGLE_LOGIN_URL = "http://127.0.0.1:8000/v1/auth/login/google";
+const GOOGLE_LOGIN_URL = "http://https://a3bde5c1549d.ngrok-free.app/v1/auth/login/google";
 
 function Authentication() {
   const [user, setUser] = useState([]);
@@ -33,7 +33,7 @@ function Authentication() {
       }
       setIsLoggedIn(true);
       try {
-        const response = await fetch("http://127.0.0.1:8000/", {
+        const response = await fetch("http://https://a3bde5c1549d.ngrok-free.app/", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

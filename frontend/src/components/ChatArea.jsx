@@ -85,20 +85,20 @@ function ChatArea({ users, onCancleSelect }) {
   });
   // console.log("reply", currentUserID);
   const chatIDs = users?.map((user) => user.chat_id);
-
+  console.log("context-menu", contextMenu);
   const chatMessages = chatIDs.flatMap((id) => messages[id] || []);
   const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
   console.log("messages", messages);
   // [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
-  // function handleOverlayClick(e) {
-  //   if (e.target.id === "overlay") {
-  //     resetFile();
-  //     setMessageInfo(null);
-  //     setEditContent(null);
-  //     setShowModal(null);
-  //   }
-  // }
+  function handleOverlayClick(e) {
+    if (e.target.id === "overlay") {
+      resetFile();
+      setMessageInfo(null);
+      setEditContent(null);
+      setShowModal(null);
+    }
+  }
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -113,7 +113,7 @@ function ChatArea({ users, onCancleSelect }) {
 
       if (t) {
         try {
-          const res = await fetch("http://127.0.0.1:8000/", {
+          const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/", {
             headers: { Authorization: `Bearer ${t}` },
           });
           if (!res.ok) throw new Error("Unauthorized");
@@ -127,16 +127,16 @@ function ChatArea({ users, onCancleSelect }) {
 
     init();
   }, []);
-  // useEffect(() => {
-  //   const handleClickOutside = () => {
-  //     if (contextMenu.msgId !== null) {
-  //       setContextMenu({ x: 0, y: 0, msgId: null });
-  //     }
-  //   };
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.msgId !== null) {
+        setContextMenu({ x: 0, y: 0, msgId: null });
+      }
+    };
 
-  //   window.addEventListener("click", handleClickOutside);
-  //   return () => window.removeEventListener("click", handleClickOutside);
-  // }, [contextMenu]);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, [contextMenu]);
 
   useEffect(() => {
     if (!token || !users?.length) return;
@@ -144,9 +144,12 @@ function ChatArea({ users, onCancleSelect }) {
       try {
         const results = await Promise.all(
           users.map(async (user) => {
-            const res = await fetch(`http://127.0.0.1:8000/v1/chat/${user.chat_id}/message`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await fetch(
+              `http://https://a3bde5c1549d.ngrok-free.app/v1/chat/${user.chat_id}/message`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
             if (!res.ok) throw new Error("Failed to load messages");
             const data = await res.json();
             return { chatId: user.chat_id, messages: data.messages ?? [] };
@@ -169,7 +172,7 @@ function ChatArea({ users, onCancleSelect }) {
   //   if (!token || !user?.chat_id) return;
   //   async function markread() {
   //     try {
-  //       const res = await fetch(`http://127.0.0.1:8000/v1/chat/markread/${user.chat_id}`, {
+  //       const res = await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/chat/markread/${user.chat_id}`, {
   //         method: "POST",
   //         headers: {
   //           "Content-Type": "application/json",
@@ -188,7 +191,9 @@ function ChatArea({ users, onCancleSelect }) {
   useEffect(() => {
     if (!token || !currentUserID?.id) return;
 
-    socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${currentUserID.id}?token=${token}`);
+    socketRef.current = new WebSocket(
+      `ws://https://a3bde5c1549d.ngrok-free.app/v1/ws/${currentUserID.id}?token=${token}`
+    );
 
     socketRef.current.onopen = () => {
       console.log("WebSocket connected for user:", currentUserID.id);
@@ -244,12 +249,10 @@ function ChatArea({ users, onCancleSelect }) {
         default:
           if (msg.Message) return;
 
-          // 🔔 desktop notification
           if (document.hidden) {
             showNotification("New Message", msg.content);
           }
 
-          // store messages per chat_id
           setMessages((prev) => {
             const chatId = msg.chat_id;
             if (!chatId) return prev;
@@ -289,7 +292,9 @@ function ChatArea({ users, onCancleSelect }) {
       console.log("WebSocket closed, retrying...");
       setTimeout(() => {
         if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
-          socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${currentUserID.id}?token=${token}`);
+          socketRef.current = new WebSocket(
+            `ws://https://a3bde5c1549d.ngrok-free.app/v1/ws/${currentUserID.id}?token=${token}`
+          );
         }
       }, 3000);
     };
@@ -442,7 +447,7 @@ function ChatArea({ users, onCancleSelect }) {
   //   formData.append("is_group", user?.is_group);
 
   //   try {
-  //     const res = await fetch(`http://127.0.0.1:8000/v1/chat/file/upload`, {
+  //     const res = await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/chat/file/upload`, {
   //       method: "POST",
   //       body: formData,
   //     });
@@ -518,87 +523,90 @@ function ChatArea({ users, onCancleSelect }) {
     return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
   }
 
-  // function handleInfo(message_id) {
-  //   setShowModal("msg_info");
-  //   const msgArray = Object.values(messages).flat();
-  //   const msg = msgArray.find((m) => m.id === message_id);
+  function handleInfo(message_id) {
+    setShowModal("msg_info");
+    const msgArray = Object.values(messages).flat();
+    const msg = msgArray.find((m) => m.id === message_id);
 
-  //   if (msg) {
-  //     setMessageInfo(msg);
-  //   } else {
-  //     console.error("no message found");
-  //   }
-  // }
+    if (msg) {
+      setMessageInfo(msg);
+    } else {
+      console.error("no message found");
+    }
+  }
 
-  // async function handleDelete(message_id) {
-  //   const msgArray = Object.values(messages).flat();
-  //   const msg = msgArray.find((m) => m.id === message_id);
+  async function handleDelete(message_id) {
+    const msgArray = Object.values(messages).flat();
+    const msg = msgArray.find((m) => m.id === message_id);
 
-  //   if (!msg) return;
+    if (!msg) return;
 
-  //   try {
-  //     const req = await fetch(`http://127.0.0.1:8000/v1/chat/delete/${message_id}`, {
-  //       method: "POST",
-  //     });
+    try {
+      const req = await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/chat/delete/${message_id}`, {
+        method: "POST",
+      });
 
-  //     if (!req.ok) throw new Error("Delete request failed");
+      if (!req.ok) throw new Error("Delete request failed");
 
-  //     setMessages((prev) => {
-  //       const newMessages = { ...prev };
-  //       for (const chatId in newMessages) {
-  //         newMessages[chatId] = newMessages[chatId].map((m) =>
-  //           m.id === message_id ? { ...m, is_deleted: true } : m
-  //         );
-  //       }
-  //       return newMessages;
-  //     });
-  //   } catch (err) {
-  //     console.error("Error deleting message:", err);
-  //   }
-  // }
+      setMessages((prev) => {
+        const newMessages = { ...prev };
+        for (const chatId in newMessages) {
+          newMessages[chatId] = newMessages[chatId].map((m) =>
+            m.id === message_id ? { ...m, is_deleted: true } : m
+          );
+        }
+        return newMessages;
+      });
+    } catch (err) {
+      console.error("Error deleting message:", err);
+    }
+  }
 
-  // const handleMessageEditOnchage = (e) => {
-  //   setEditContent(e.target.value);
-  // };
+  const handleMessageEditOnchage = (e) => {
+    setEditContent(e.target.value);
+  };
 
-  // async function handleEdit(message_id) {
-  //   if (message_id) {
-  //     console.log(message_id);
-  //   } else {
-  //     console.error("no message id");
-  //   }
-  //   const data = new FormData();
+  async function handleEdit(message_id) {
+    if (message_id) {
+      console.log(message_id);
+    } else {
+      console.error("no message id");
+    }
+    const data = new FormData();
 
-  //   data.append("content", editContent);
+    data.append("content", editContent);
 
-  //   try {
-  //     const req = await fetch(`http://127.0.0.1:8000/v1/chat/edit/message/${message_id}`, {
-  //       method: "PUT",
-  //       body: data,
-  //     });
+    try {
+      const req = await fetch(
+        `http://https://a3bde5c1549d.ngrok-free.app/v1/chat/edit/message/${message_id}`,
+        {
+          method: "PUT",
+          body: data,
+        }
+      );
 
-  //     if (!req.ok) throw new Error("Edit request failed");
-  //     setEditContent(null);
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-  // }
+      if (!req.ok) throw new Error("Edit request failed");
+      setEditContent(null);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
-  // const getContextMenuXY = (clickX, clickY) => {
-  //   let x = clickX;
-  //   let y = clickY;
+  const getContextMenuXY = (clickX, clickY) => {
+    let x = clickX;
+    let y = clickY;
 
-  //   const menuWidth = 73.8;
-  //   const menuHeight = 180;
+    const menuWidth = 73.8;
+    const menuHeight = 180;
 
-  //   if (x + menuWidth > window.innerWidth) {
-  //     x = window.innerWidth - menuWidth - 10;
-  //   }
-  //   if (y + menuHeight > window.innerHeight) {
-  //     y = window.innerHeight - menuHeight - 10;
-  //   }
-  //   return { x, y };
-  // };
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 10;
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - 10;
+    }
+    return { x, y };
+  };
 
   const ImageMessage = React.memo(
     ({
@@ -984,7 +992,6 @@ function ChatArea({ users, onCancleSelect }) {
         {users.map((user) => {
           const chatMessages = messages[user.chat_id] || [];
           const sortedMessages = [...chatMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-          console.log("messages", messages);
           return (
             <div className="w-full overflow-hidden bg-[#14171c] border-r-1 border-[#ffffff2c] flex flex-col">
               {/* Header */}
@@ -1561,7 +1568,7 @@ function ChatArea({ users, onCancleSelect }) {
                       }}
                       onKeyDown={(e) => handleKeyPress(e, user?.chat_id, user?.is_group)}
                       placeholder="Write a message..."
-                      className="w-full h-[3.5rem] outline-0 bg-transparent text-white"
+                      className="w-full h-[3.2rem] outline-0 bg-transparent text-white"
                     />
                     <label className="flex items-center cursor-pointer">
                       <FontAwesomeIcon icon={faPaperclip} className="text-[20px]" />
@@ -1592,356 +1599,331 @@ function ChatArea({ users, onCancleSelect }) {
               </div>
             </div>
           );
-          {
-            showModal == "account" && (
-              <div
-                id="overlay"
-                onClick={handleOverlayClick}
-                className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
-              >
-                <div className="bg-[#ffffffd0] border border-black/10 h-[60%] w-[50%] rounded-2xl overflow-hidden">
-                  <div className="w-full">
-                    <img src={profileBg} alt="...." className="h-[10rem] w-full object-cover" />
+        })}
+        {showModal == "account" && (
+          <div
+            id="overlay"
+            onClick={handleOverlayClick}
+            className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
+          >
+            <div className="bg-[#ffffffd0] border border-black/10 h-[60%] w-[50%] rounded-2xl overflow-hidden">
+              <div className="w-full">
+                <img src={profileBg} alt="...." className="h-[10rem] w-full object-cover" />
+              </div>
+              <img src={user.picture} alt="..." className="absolute top-[37%] ml-[40px] rounded-[50%]" />
+              <div className="h-[100%] p-[1rem] flex flex-col">
+                <div className="flex items-center justify-between">
+                  <p className="text-xl ml-35">{user.name}</p>
+                  <p className="flex items-center gap-2">
+                    {user.email}
+                    {user.is_verified == true ? (
+                      <CheckCircle className="w-4 h-4 text-blue-500" />
+                    ) : (
+                      <BadgeCheck className="h-5 w-5 text-blue-500 inline-block ml-1" />
+                    )}
+                  </p>
+                </div>
+                <div className="flex gap-7">
+                  <div className="w-[40%] mt-10 h-full flex flex-col gap-[1rem]">
+                    <p className="border-b-3 w-[3.1rem] ">Details</p>
+                    <p className="pt-1 pb-1 pl-3  rounded-md bg-[#b7b7b7b3]">First name: {user.first_name}</p>
+                    <p className="pt-1 pb-1 pl-3 rounded-md bg-[#b7b7b7b3]">Last name: {user.last_name}</p>
+                    <p className="pt-1 pb-1 pl-3  rounded-md bg-[#b7b7b7b3]">Date of birth: {user.d_o_b}</p>
                   </div>
-                  <img src={user.picture} alt="..." className="absolute top-[37%] ml-[40px] rounded-[50%]" />
-                  <div className="h-[100%] p-[1rem] flex flex-col">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xl ml-35">{user.name}</p>
-                      <p className="flex items-center gap-2">
-                        {user.email}
-                        {user.is_verified == true ? (
-                          <CheckCircle className="w-4 h-4 text-blue-500" />
-                        ) : (
-                          <BadgeCheck className="h-5 w-5 text-blue-500 inline-block ml-1" />
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex gap-7">
-                      <div className="w-[40%] mt-10 h-full flex flex-col gap-[1rem]">
-                        <p className="border-b-3 w-[3.1rem] ">Details</p>
-                        <p className="pt-1 pb-1 pl-3  rounded-md bg-[#b7b7b7b3]">
-                          First name: {user.first_name}
-                        </p>
-                        <p className="pt-1 pb-1 pl-3 rounded-md bg-[#b7b7b7b3]">
-                          Last name: {user.last_name}
-                        </p>
-                        <p className="pt-1 pb-1 pl-3  rounded-md bg-[#b7b7b7b3]">
-                          Date of birth: {user.d_o_b}
-                        </p>
-                      </div>
-                      <div className="w-[60%] mt-10 h-full flex flex-col pb-10 gap-[1rem]">
-                        <p className="border-b-3 w-[2.7rem] ">About</p>
-                        <p className="pt-1 pb-1 pl-3 h-full rounded-md bg-[#b7b7b7b3]"> {user.about}</p>
-                      </div>
-                    </div>
+                  <div className="w-[60%] mt-10 h-full flex flex-col pb-10 gap-[1rem]">
+                    <p className="border-b-3 w-[2.7rem] ">About</p>
+                    <p className="pt-1 pb-1 pl-3 h-full rounded-md bg-[#b7b7b7b3]"> {user.about}</p>
                   </div>
                 </div>
               </div>
-            );
-          }
-          {
-            contextMenu.msgId && (
-              <ul
-                className="absolute z-50 bg-gray-800 text-white rounded shadow-md text-sm"
-                style={{ top: contextMenu.y, left: contextMenu.x }}
-                onClick={() => setContextMenu({ x: 0, y: 0, msgId: null })}
-              >
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => handleInfo(contextMenu.msgId)}
-                >
-                  Info
-                </li>
-                {contextMenu.senderId == currentUserID.id && (
-                  <div>
-                    <li
-                      className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                      onClick={() =>
-                        setShowModal({ EditMsgId: contextMenu.msgId, EditMsgInfo: contextMenu.msgInfo })
-                      }
-                    >
-                      Edit
-                    </li>
-                    <li
-                      className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                      onClick={() => setShowModal({ msgId: contextMenu.msgId })}
-                    >
-                      Delete
-                    </li>
-                  </div>
-                )}
+            </div>
+          </div>
+        )}
+
+        {contextMenu.msgId && (
+          <ul
+            className="absolute z-50 bg-gray-800 text-white rounded shadow-md text-sm"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            onClick={() => setContextMenu({ x: 0, y: 0, msgId: null })}
+          >
+            <li
+              className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+              onClick={() => handleInfo(contextMenu.msgId)}
+            >
+              Info
+            </li>
+            {contextMenu.senderId == currentUserID.id && (
+              <div>
                 <li
                   className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
                   onClick={() =>
-                    setReplyMessage({
-                      replyMsgId: contextMenu.msgId,
-                      replyFileUrl: contextMenu.file_url || null,
-                      replyFileType: contextMenu.file_type || null,
-                      replyFileName: contextMenu.file_name || null,
-                      replyFileSize: contextMenu.file_size || null,
-                      replyMsgContent: contextMenu.msgInfo || null,
-                    })
+                    setShowModal({ EditMsgId: contextMenu.msgId, EditMsgInfo: contextMenu.msgInfo })
                   }
                 >
-                  Reply
+                  Edit
                 </li>
                 <li
                   className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => handleSelect(contextMenu.msgId)}
+                  onClick={() => setShowModal({ msgId: contextMenu.msgId })}
                 >
-                  Select
+                  Delete
                 </li>
-              </ul>
-            );
-          }
-          {
-            showModal == "file" && (
-              <div
-                id="overlay"
-                onClick={handleOverlayClick}
-                className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
-              >
-                <div className="bg-[#ffffffd0] border border-black/10 p-3 rounded-2xl overflow-hidden">
-                  {file && (
-                    <div className="space-y-3">
-                      <p className="text-sm">📄 {file.name}</p>
-
-                      {/* Image preview if applicable */}
-                      {file.type.startsWith("image/") && (
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt="preview"
-                          className="max-h-40 rounded-md border"
-                        />
-                      )}
-
-                      <div className="flex justify-end gap-2 mt-4">
-                        <button
-                          className="bg-red-500 text-white text-md cursor-pointer pl-2 pr-2 rounded-[4px] hover:bg-red-600"
-                          onClick={() => {
-                            setShowModal(null);
-                            resetFile();
-                          }}
-                        >
-                          cancel
-                        </button>
-                        <button
-                          className="bg-blue-500 text-white text-md pl-2 pr-2 cursor-pointer rounded-[4px] hover:bg-blue-600"
-                          onClick={handleFileUpload}
-                        >
-                          Send
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
-            );
-          }
+            )}
+            <li
+              className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+              onClick={() =>
+                setReplyMessage({
+                  replyMsgId: contextMenu.msgId,
+                  replyFileUrl: contextMenu.file_url || null,
+                  replyFileType: contextMenu.file_type || null,
+                  replyFileName: contextMenu.file_name || null,
+                  replyFileSize: contextMenu.file_size || null,
+                  replyMsgContent: contextMenu.msgInfo || null,
+                })
+              }
+            >
+              Reply
+            </li>
+            <li
+              className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+              onClick={() => handleSelect(contextMenu.msgId)}
+            >
+              Select
+            </li>
+          </ul>
+        )}
+        {showModal == "file" && (
+          <div
+            id="overlay"
+            onClick={handleOverlayClick}
+            className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
+          >
+            <div className="bg-[#ffffffd0] border border-black/10 p-3 rounded-2xl overflow-hidden">
+              {file && (
+                <div className="space-y-3">
+                  <p className="text-sm">📄 {file.name}</p>
 
-          {
-            /* message info */
-          }
-          {
-            showModal === "msg_info" && (
-              <div
-                id="overlay"
-                onClick={handleOverlayClick}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+                  {/* Image preview if applicable */}
+                  {file.type.startsWith("image/") && (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt="preview"
+                      className="max-h-40 rounded-md border"
+                    />
+                  )}
+
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button
+                      className="bg-red-500 text-white text-md cursor-pointer pl-2 pr-2 rounded-[4px] hover:bg-red-600"
+                      onClick={() => {
+                        setShowModal(null);
+                        resetFile();
+                      }}
+                    >
+                      cancel
+                    </button>
+                    <button
+                      className="bg-blue-500 text-white text-md pl-2 pr-2 cursor-pointer rounded-[4px] hover:bg-blue-600"
+                      onClick={handleFileUpload}
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* message info */}
+        {showModal === "msg_info" && (
+          <div
+            id="overlay"
+            onClick={handleOverlayClick}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <div
+              className="bg-white/95 border border-gray-200 shadow-2xl rounded-xl p-5 w-[90%] max-w-md relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowModal(null)}
+                className="absolute top-3 right-3 text-gray-500 hover:text-black"
               >
-                <div
-                  className="bg-white/95 border border-gray-200 shadow-2xl rounded-xl p-5 w-[90%] max-w-md relative"
-                  onClick={(e) => e.stopPropagation()}
+                ✕
+              </button>
+
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Message Details</h2>
+
+              {messageInfo.file_url ? (
+                messageInfo.file_type.startsWith("image/") ? (
+                  <div className="flex flex-col gap-4">
+                    <a
+                      href={messageInfo.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex justify-center"
+                    >
+                      <img
+                        src={messageInfo.file_url}
+                        alt={messageInfo.file_name}
+                        className="max-h-56 rounded-lg shadow-md border"
+                      />
+                    </a>
+
+                    <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
+                      <p>
+                        <span className="font-medium">Status:</span>{" "}
+                        {messageInfo.read || messageInfo.is_read ? "Seen" : "Delivered"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Time:</span> {messageInfo.sent_time}
+                      </p>
+                      <p>
+                        <span className="font-medium">Sender:</span>{" "}
+                        {messageInfo.sender.name || messageInfo.sender_name}
+                      </p>
+                      <p>
+                        <span className="font-medium">Type:</span> {messageInfo.file_type}
+                      </p>
+                      <p>
+                        <span className="font-medium">Size:</span> {formatFileSize(Number(messageInfo.size))}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <a href={messageInfo.file_url} target="_blank" rel="noopener noreferrer">
+                      <div className="rounded-lg p-3 flex gap-3 items-center bg-gray-700 hover:bg-gray-600 transition">
+                        <FileIcons type={messageInfo.file_type} size={32} className="text-white" />
+                        <div>
+                          <p className="text-sm font-medium text-white truncate">{messageInfo.file_name}</p>
+                          <p className="text-xs text-gray-300">
+                            {messageInfo.file_type} • {formatFileSize(messageInfo.size)}
+                          </p>
+                        </div>
+                      </div>
+                    </a>
+
+                    <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
+                      <p>
+                        <span className="font-medium">Status:</span>{" "}
+                        {messageInfo.read || messageInfo.is_read ? "Seen" : "Delivered"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Time:</span> {messageInfo.sent_time}
+                      </p>
+                      <p>
+                        <span className="font-medium">Sender:</span>{" "}
+                        {messageInfo.sender.name || messageInfo.sender_name}
+                      </p>
+                      <p>
+                        <span className="font-medium">Type:</span> {messageInfo.file_type}
+                      </p>
+                      <p>
+                        <span className="font-medium">Size:</span> {formatFileSize(Number(messageInfo.size))}
+                      </p>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-[#c4c3c3e1]  p-3 rounded-lg text-sm text-gray-800 ">
+                    {messageInfo.content}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
+                    <p>
+                      <span className="font-medium">Status:</span>{" "}
+                      {messageInfo.read || messageInfo.is_read ? " Seen" : "Delivered"}
+                    </p>
+                    <p>
+                      <span className="font-medium">Time:</span> {messageInfo.sent_time}
+                    </p>
+                    <p>
+                      <span className="font-medium">Sender:</span>{" "}
+                      {messageInfo.sender.name || messageInfo.sender_name}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Delete model */}
+        {showModal?.msgId && (
+          <div
+            id="overlay"
+            onClick={handleOverlayClick}
+            className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
+          >
+            <div className="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-80">
+              <h2 className="text-lg font-semibold mb-2">Delete Message</h2>
+              <p className="text-sm text-gray-300 mb-4">Are you sure you want to delete this message?</p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowModal(null)}
+                  className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-500"
                 >
-                  <button
-                    onClick={() => setShowModal(null)}
-                    className="absolute top-3 right-3 text-gray-500 hover:text-black"
-                  >
-                    ✕
-                  </button>
-
-                  <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Message Details</h2>
-
-                  {messageInfo.file_url ? (
-                    messageInfo.file_type.startsWith("image/") ? (
-                      <div className="flex flex-col gap-4">
-                        <a
-                          href={messageInfo.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex justify-center"
-                        >
-                          <img
-                            src={messageInfo.file_url}
-                            alt={messageInfo.file_name}
-                            className="max-h-56 rounded-lg shadow-md border"
-                          />
-                        </a>
-
-                        <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
-                          <p>
-                            <span className="font-medium">Status:</span>{" "}
-                            {messageInfo.read || messageInfo.is_read ? "Seen" : "Delivered"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Time:</span> {messageInfo.sent_time}
-                          </p>
-                          <p>
-                            <span className="font-medium">Sender:</span>{" "}
-                            {messageInfo.sender.name || messageInfo.sender_name}
-                          </p>
-                          <p>
-                            <span className="font-medium">Type:</span> {messageInfo.file_type}
-                          </p>
-                          <p>
-                            <span className="font-medium">Size:</span>{" "}
-                            {formatFileSize(Number(messageInfo.size))}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3">
-                        <a href={messageInfo.file_url} target="_blank" rel="noopener noreferrer">
-                          <div className="rounded-lg p-3 flex gap-3 items-center bg-gray-700 hover:bg-gray-600 transition">
-                            <FileIcons type={messageInfo.file_type} size={32} className="text-white" />
-                            <div>
-                              <p className="text-sm font-medium text-white truncate">
-                                {messageInfo.file_name}
-                              </p>
-                              <p className="text-xs text-gray-300">
-                                {messageInfo.file_type} • {formatFileSize(messageInfo.size)}
-                              </p>
-                            </div>
-                          </div>
-                        </a>
-
-                        <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
-                          <p>
-                            <span className="font-medium">Status:</span>{" "}
-                            {messageInfo.read || messageInfo.is_read ? "Seen" : "Delivered"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Time:</span> {messageInfo.sent_time}
-                          </p>
-                          <p>
-                            <span className="font-medium">Sender:</span>{" "}
-                            {messageInfo.sender.name || messageInfo.sender_name}
-                          </p>
-                          <p>
-                            <span className="font-medium">Type:</span> {messageInfo.file_type}
-                          </p>
-                          <p>
-                            <span className="font-medium">Size:</span>{" "}
-                            {formatFileSize(Number(messageInfo.size))}
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <div className="bg-[#c4c3c3e1]  p-3 rounded-lg text-sm text-gray-800 ">
-                        {messageInfo.content}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 bg-gray-100 p-3 rounded-lg text-sm">
-                        <p>
-                          <span className="font-medium">Status:</span>{" "}
-                          {messageInfo.read || messageInfo.is_read ? " Seen" : "Delivered"}
-                        </p>
-                        <p>
-                          <span className="font-medium">Time:</span> {messageInfo.sent_time}
-                        </p>
-                        <p>
-                          <span className="font-medium">Sender:</span>{" "}
-                          {messageInfo.sender.name || messageInfo.sender_name}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleDelete(showModal.msgId);
+                    setShowModal(null);
+                  }}
+                  className="px-3 py-1 rounded bg-red-600 hover:bg-red-500"
+                >
+                  Delete
+                </button>
               </div>
-            );
-          }
+            </div>
+          </div>
+        )}
+        {showModal?.EditMsgId && (
+          <div
+            id="overlay"
+            onClick={handleOverlayClick}
+            className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
+          >
+            <div className="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-80">
+              <h2 className="text-lg font-semibold mb-2">Edit Message</h2>
+              <p className="text-sm text-gray-300 mb-4">{showModal.EditMsgInfo}</p>
+              <textarea
+                name="content"
+                value={editContent}
+                onChange={(e) => {
+                  if (e) {
+                    handleMessageEditOnchage(e);
+                  }
+                  e.target.value = "";
+                }}
+                id="content"
+                className="w-[100%] border-1"
+              ></textarea>
 
-          {
-            /* Delete model */
-          }
-          {
-            showModal?.msgId && (
-              <div
-                id="overlay"
-                onClick={handleOverlayClick}
-                className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
-              >
-                <div className="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-80">
-                  <h2 className="text-lg font-semibold mb-2">Delete Message</h2>
-                  <p className="text-sm text-gray-300 mb-4">Are you sure you want to delete this message?</p>
-
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => setShowModal(null)}
-                      className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-500"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleDelete(showModal.msgId);
-                        setShowModal(null);
-                      }}
-                      className="px-3 py-1 rounded bg-red-600 hover:bg-red-500"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowModal(null)}
+                  className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleEdit(showModal.EditMsgId);
+                    setShowModal(null);
+                  }}
+                  className="px-3 py-1 rounded bg-red-600 hover:bg-red-500"
+                >
+                  Edit
+                </button>
               </div>
-            );
-          }
-          {
-            showModal?.EditMsgId && (
-              <div
-                id="overlay"
-                onClick={handleOverlayClick}
-                className="fixed inset-0 bg-[#00000085] backdrop-blur-[2px] flex items-center justify-center z-50"
-              >
-                <div className="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-80">
-                  <h2 className="text-lg font-semibold mb-2">Edit Message</h2>
-                  <p className="text-sm text-gray-300 mb-4">{showModal.EditMsgInfo}</p>
-                  <textarea
-                    name="content"
-                    value={editContent}
-                    onChange={(e) => {
-                      if (e) {
-                        handleMessageEditOnchage(e);
-                      }
-                      e.target.value = "";
-                    }}
-                    id="content"
-                    className="w-[100%] border-1"
-                  ></textarea>
-
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => setShowModal(null)}
-                      className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-500"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleEdit(showModal.EditMsgId);
-                        setShowModal(null);
-                      }}
-                      className="px-3 py-1 rounded bg-red-600 hover:bg-red-500"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          }
-        })}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

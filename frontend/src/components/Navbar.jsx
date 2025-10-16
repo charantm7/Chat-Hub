@@ -30,13 +30,16 @@ function Navbar({ onSelect }) {
     const token = await GetValidAccessToken();
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/v1/chat/friend-requests/${id}/accept`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `http://https://a3bde5c1549d.ngrok-free.app/v1/chat/friend-requests/${id}/accept`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!res.ok) throw new Error("Request failed");
 
       const data = await res.json();
@@ -51,13 +54,16 @@ function Navbar({ onSelect }) {
     const token = await GetValidAccessToken();
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/v1/chat/friend-requests/${id}/reject`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `http://https://a3bde5c1549d.ngrok-free.app/v1/chat/friend-requests/${id}/reject`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!res.ok) throw new Error("Request failed");
 
       const data = await res.json();
@@ -74,7 +80,7 @@ function Navbar({ onSelect }) {
       const token = await GetValidAccessToken();
 
       try {
-        const res = await fetch("http://127.0.0.1:8000/v1/chat/friend-requests", {
+        const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/v1/chat/friend-requests", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -96,7 +102,7 @@ function Navbar({ onSelect }) {
       const token = await GetValidAccessToken();
       console.log(token);
       try {
-        const response = await fetch("http://127.0.0.1:8000/", {
+        const response = await fetch("http://https://a3bde5c1549d.ngrok-free.app/", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -122,7 +128,7 @@ function Navbar({ onSelect }) {
     <nav className=" bg-[#0104099e] text-[#e8e8e8e0] flex flex-row justify-between pt-[.5rem] pb-[.5rem] pr-[1rem] pl-[1rem] border-1 border-b-0 border-[var(--border)] items-center rounded-t-lg">
       <div className="flex items-center gap-2">
         <img src={chatHubLogo} alt="..." className="h-[35px] rounded-[50%]" />
-        <h3 className="text-2xl font-bold font-sans">Chat Hub</h3>
+        <h3 className="text-2xl font-bold font-sans">Lumeoo</h3>
         {user?.is_pro && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[7px] bg-gradient-to-r from-yellow-500/20 via-amber-400/20 to-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-[12px] font-semibold shadow-sm ml-5">
             🌟 Premium
