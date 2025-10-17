@@ -5,7 +5,7 @@ import { GetValidAccessToken, GetAllUsers } from "./index";
 import GroupProfile from "../assets/group-profile.jpg";
 
 export async function getFriends(token) {
-  const response = await fetch("http://https://a3bde5c1549d.ngrok-free.app/v1/chat/friends", {
+  const response = await fetch("http://127.0.0.1:8000/v1/chat/friends", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -84,7 +84,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
     const token = await GetValidAccessToken();
     if (!token) return;
     try {
-      const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/v1/chat/invite/friend", {
+      const res = await fetch("http://127.0.0.1:8000/v1/chat/invite/friend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -153,7 +153,7 @@ const ChatList = ({ onSelect, selectedUser }) => {
     try {
       const token = await GetValidAccessToken();
 
-      const req = await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/chat/create/group`, {
+      const req = await fetch(`http://127.0.0.1:8000/v1/chat/create/group`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

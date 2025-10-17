@@ -59,7 +59,7 @@ export default function ProPlans() {
 
       if (t) {
         try {
-          const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/", {
+          const res = await fetch("http://127.0.0.1:8000/", {
             headers: { Authorization: `Bearer ${t}` },
           });
           if (!res.ok) throw new Error("Unauthorized");
@@ -76,7 +76,7 @@ export default function ProPlans() {
 
   const createOrder = async (user_id, plan) => {
     try {
-      const req = await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/payment/create-order`, {
+      const req = await fetch(`http://127.0.0.1:8000/v1/payment/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id, plan }),
@@ -95,7 +95,7 @@ export default function ProPlans() {
         description: "Upgrade Plan",
         order_id,
         handler: async function (response) {
-          await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/payment/verify-payment`, {
+          await fetch(`http://127.0.0.1:8000/v1/payment/verify-payment`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

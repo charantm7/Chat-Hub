@@ -44,7 +44,7 @@ function Main({ selectedModal, onSelect }) {
       }).map(([Key, value]) => [Key, value === "" ? null : value])
     );
     try {
-      const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/v1/auth/update/my/profile", {
+      const res = await fetch("http://127.0.0.1:8000/v1/auth/update/my/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -69,7 +69,7 @@ function Main({ selectedModal, onSelect }) {
     async function get_current_user() {
       const token = await GetValidAccessToken();
       try {
-        const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/", {
+        const res = await fetch("http://127.0.0.1:8000/", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

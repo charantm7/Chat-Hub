@@ -113,7 +113,7 @@ function ChatArea({ users, onCancleSelect }) {
 
       if (t) {
         try {
-          const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/", {
+          const res = await fetch("http://127.0.0.1:8000/", {
             headers: { Authorization: `Bearer ${t}` },
           });
           if (!res.ok) throw new Error("Unauthorized");
@@ -144,12 +144,9 @@ function ChatArea({ users, onCancleSelect }) {
       try {
         const results = await Promise.all(
           users.map(async (user) => {
-            const res = await fetch(
-              `http://https://a3bde5c1549d.ngrok-free.app/v1/chat/${user.chat_id}/message`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              }
-            );
+            const res = await fetch(`http://127.0.0.1:8000/v1/chat/${user.chat_id}/message`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
             if (!res.ok) throw new Error("Failed to load messages");
             const data = await res.json();
             return { chatId: user.chat_id, messages: data.messages ?? [] };
@@ -172,7 +169,7 @@ function ChatArea({ users, onCancleSelect }) {
   //   if (!token || !user?.chat_id) return;
   //   async function markread() {
   //     try {
-  //       const res = await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/chat/markread/${user.chat_id}`, {
+  //       const res = await fetch(`http://127.0.0.1:8000/v1/chat/markread/${user.chat_id}`, {
   //         method: "POST",
   //         headers: {
   //           "Content-Type": "application/json",
@@ -191,9 +188,7 @@ function ChatArea({ users, onCancleSelect }) {
   useEffect(() => {
     if (!token || !currentUserID?.id) return;
 
-    socketRef.current = new WebSocket(
-      `ws://https://a3bde5c1549d.ngrok-free.app/v1/ws/${currentUserID.id}?token=${token}`
-    );
+    socketRef.current = new WebSocket(`ws://127.0.0.1:8000/v1/ws/${currentUserID.id}?token=${token}`);
 
     socketRef.current.onopen = () => {
       console.log("WebSocket connected for user:", currentUserID.id);
@@ -293,7 +288,7 @@ function ChatArea({ users, onCancleSelect }) {
       setTimeout(() => {
         if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
           socketRef.current = new WebSocket(
-            `ws://https://a3bde5c1549d.ngrok-free.app/v1/ws/${currentUserID.id}?token=${token}`
+            `ws://http://127.0.0.1:8000/v1/ws/${currentUserID.id}?token=${token}`
           );
         }
       }, 3000);
@@ -447,7 +442,7 @@ function ChatArea({ users, onCancleSelect }) {
   //   formData.append("is_group", user?.is_group);
 
   //   try {
-  //     const res = await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/chat/file/upload`, {
+  //     const res = await fetch(`http://127.0.0.1:8000/v1/chat/file/upload`, {
   //       method: "POST",
   //       body: formData,
   //     });
@@ -542,7 +537,7 @@ function ChatArea({ users, onCancleSelect }) {
     if (!msg) return;
 
     try {
-      const req = await fetch(`http://https://a3bde5c1549d.ngrok-free.app/v1/chat/delete/${message_id}`, {
+      const req = await fetch(`http://127.0.0.1:8000/v1/chat/delete/${message_id}`, {
         method: "POST",
       });
 
@@ -577,13 +572,10 @@ function ChatArea({ users, onCancleSelect }) {
     data.append("content", editContent);
 
     try {
-      const req = await fetch(
-        `http://https://a3bde5c1549d.ngrok-free.app/v1/chat/edit/message/${message_id}`,
-        {
-          method: "PUT",
-          body: data,
-        }
-      );
+      const req = await fetch(`http://127.0.0.1:8000/v1/chat/edit/message/${message_id}`, {
+        method: "PUT",
+        body: data,
+      });
 
       if (!req.ok) throw new Error("Edit request failed");
       setEditContent(null);

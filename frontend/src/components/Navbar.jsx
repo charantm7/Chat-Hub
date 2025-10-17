@@ -18,7 +18,7 @@ function Navbar({ onSelect }) {
   const [count, setCount] = useState(null);
   const [requestStatus, setRequestStatus] = useState({});
   const [user, setUser] = useState([]);
-
+  console.log("user", user);
   const handleOverlayClick = (e) => {
     if (e.target.id == "overlay") {
       setShowModal(null);
@@ -30,16 +30,13 @@ function Navbar({ onSelect }) {
     const token = await GetValidAccessToken();
 
     try {
-      const res = await fetch(
-        `http://https://a3bde5c1549d.ngrok-free.app/v1/chat/friend-requests/${id}/accept`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`http://127.0.0.1:8000/v1/chat/friend-requests/${id}/accept`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) throw new Error("Request failed");
 
       const data = await res.json();
@@ -54,16 +51,13 @@ function Navbar({ onSelect }) {
     const token = await GetValidAccessToken();
 
     try {
-      const res = await fetch(
-        `http://https://a3bde5c1549d.ngrok-free.app/v1/chat/friend-requests/${id}/reject`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`http://127.0.0.1:8000/v1/chat/friend-requests/${id}/reject`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) throw new Error("Request failed");
 
       const data = await res.json();
@@ -80,7 +74,7 @@ function Navbar({ onSelect }) {
       const token = await GetValidAccessToken();
 
       try {
-        const res = await fetch("http://https://a3bde5c1549d.ngrok-free.app/v1/chat/friend-requests", {
+        const res = await fetch("http://127.0.0.1:8000/v1/chat/friend-requests", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -102,7 +96,7 @@ function Navbar({ onSelect }) {
       const token = await GetValidAccessToken();
       console.log(token);
       try {
-        const response = await fetch("http://https://a3bde5c1549d.ngrok-free.app/", {
+        const response = await fetch("http://127.0.0.1:8000/", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
