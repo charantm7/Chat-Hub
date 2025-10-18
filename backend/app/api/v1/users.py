@@ -82,6 +82,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 @router.post('/refresh')
 async def refresh(token: RefreshToken):
     print(token.token)
+
     return await security.validate_refresh_token(token=token.token)
 
 
