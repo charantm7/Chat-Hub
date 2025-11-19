@@ -29,7 +29,9 @@ from .service import (
     send_messages,
     get_messages,
     delete_messages,
-    mark_read_messages_service
+    mark_read_messages_service,
+    ChatService,
+    ChatOnWebsocket
 )
 from backend.app.services import user_service
 from app.core.websocket import manager
@@ -106,134 +108,64 @@ async def get_message(
 
 
 @chat.delete('/delete/{message_id}')
-async def delete_message(message_id: UUID, db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
+async def delete_message(
+        message_id: UUID,
+        db: Session = Depends(get_db),
+        current_user: Users = Depends(user_service.get_current_user)):
     return await delete_messages(message_id=message_id, db=db, current_user=current_user)
 
 
 @chat.post('/markread/{chat_id}')
-async def mark_read_messages(chat_id: UUID, current_user: Users = Depends(user_service.get_current_user), db: Session = Depends(get_db)):
+async def mark_read_messages(
+        chat_id: UUID,
+        current_user: Users = Depends(user_service.get_current_user),
+        db: Session = Depends(get_db)):
 
     return await mark_read_messages_service(chat_id=chat_id,  current_user=current_user, db=db)
 
 
 @chat.post('/file/upload')
-async def file_upload(request: Request, sender_id: int = Form(...), chat_id: UUID = Form(...), is_group: bool = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def file_upload(
+        request: Request,
+        sender_id: int = Form(...),
+        chat_id: UUID = Form(...),
+        is_group: bool = Form(...),
+        file: UploadFile = File(...),
+        db: Session = Depends(get_db)):
 
-    max_size = 50 * 1024 * 1024
-    size = 0
-
-    file_ext = os.path.splitext(file.filename)[1]
-    file_name = f"{uuid4()}{file_ext}"
-    file_path = os.path.join(upload_dir, file_name)
-
-    with open(file_path, 'wb') as f:
-        while chunk := await file.read(1024*1024):
-            size += len(chunk)
-            if size > max_size:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail='File is too large!')
-
-            f.write(chunk)
-
-    mime_type, _ = mimetypes.guess_type(file.filename)
-    file_url = str(request.url_for('get_file', filename=file_name))
-
-    new_message = Message(sender_id=sender_id, chat_id=chat_id,
-                          file_url=file_url, file_name=file.filename, file_size=size, unique_name=file_name, file_type=mime_type, is_group=is_group)
-
-    db.add(new_message)
-    db.commit()
-    db.refresh(new_message)
-
-    return {
-        "url": new_message.file_url,
-        "file_type": new_message.file_type,
-        "file_name": new_message.file_name,
-        "unique_name": new_message.unique_name,
-        "size": new_message.file_size,
-        "is_group": new_message.is_group,
-        "sender": new_message.sender
-    }
+    return await ChatService(db=db).file_upload_service(request=request, sender_id=sender_id, chat_id=chat_id, is_group=is_group, file=file)
 
 
 @chat.get('/file/{filename}', name='get_file')
-async def get_file(filename: str, db: Session = Depends(get_db)):
+async def get_file(
+        filename: str,
+        db: Session = Depends(get_db)):
 
-    exisiting_file = db.query(Message).filter(
-        Message.unique_name == filename).first()
-
-    if not exisiting_file:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="file not found in db")
-
-    file_path = os.path.join(upload_dir, filename)
-
-    if not os.path.exists(file_path):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="file not found in system")
-
-    return FileResponse(file_path)
+    return await ChatService(db=db).get_file_service(filename=filename)
 
 
 @chat.post("/delete/{message_id}")
-async def delete_msg(message_id: UUID, db: Session = Depends(get_db)):
+async def delete_msg(
+        message_id: UUID,
+        db: Session = Depends(get_db)):
 
-    message = db.query(Message).filter(Message.id == message_id).one_or_none()
-
-    if not message:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
-
-    message.is_deleted = True
-    db.commit()
-
-    await manager.broadcast(message.chat_id, {
-        'type': "delete_message",
-        'message_id': str(message_id),
-        'chat_id': str(message.chat_id)
-    })
-
-    return {'message': 'Message deleted successfully'}
+    return await ChatOnWebsocket(db=db).delete_msg_tosocket(message_id=message_id)
 
 
 @chat.put('/edit/message/{message_id}')
-async def edit_message(message_id: UUID, content: str = Form(...), db: Session = Depends(get_db)):
+async def edit_message(
+        message_id: UUID,
+        content: str = Form(...),
+        db: Session = Depends(get_db)):
 
-    message = db.query(Message).filter(Message.id == message_id).one_or_none()
-
-    if not message:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
-
-    message.content = content
-    db.commit()
-
-    await manager.broadcast(message.chat_id, {
-        "type": "message_edit",
-        "message_id": str(message_id),
-        "chat_id": str(message.chat_id),
-        "content": message.content
-
-    })
-
-    return {"message": "Message edited successfully"}
+    return await ChatOnWebsocket(db=db).edit_message_tosocket(message_id=message_id, content=content)
 
 
 @chat.post('/create/group')
-async def create_group(name: str = Form(...), member_ids: list[int] = Form(...), db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
+async def create_group(
+        name: str = Form(...),
+        member_ids: list[int] = Form(...),
+        db: Session = Depends(get_db),
+        current_user: Users = Depends(user_service.get_current_user)):
 
-    if not name:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='name not provided')
-
-    new_group = Chats(name=name, is_group=True)
-    db.add(new_group)
-    db.commit()
-    db.refresh(new_group)
-
-    member_ids.append(current_user.id)
-    for id in member_ids:
-        db.add(ChatMembers(user_id=id, chat_id=new_group.id))
-    db.commit()
-
-    return {"chat_id": str(new_group.id), "name": new_group.name}
+    return await ChatService(db=db, current_user=current_user).create_group_service(name=name, member_ids=member_ids)
