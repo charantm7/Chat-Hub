@@ -9,7 +9,7 @@ from authlib.integrations.starlette_client import OAuth
 
 from app.core.config import settings
 from app.schemas import user_schema
-from app.core.redis_script import redis_manager
+from backend.app.core.redis_script import redis_manager
 
 
 ALGORITHM = settings.ALGORITHM

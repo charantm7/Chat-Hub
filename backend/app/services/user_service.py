@@ -9,7 +9,7 @@ from app.schemas.user_schema import User
 from app.models.user_model import Users
 from app.utils import security
 from app.core.psql_connection import get_db
-from app.core.redis_script import redis_manager
+from backend.app.core.redis_script import redis_manager
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl='/v1/auth/google/callback')
 

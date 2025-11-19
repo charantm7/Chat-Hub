@@ -5,7 +5,7 @@ from fastapi import WebSocket
 import json
 import uuid
 
-from app.core.redis_script import pubsub_manager, redis_manager
+from backend.app.core.redis_script import pubsub_manager, redis_manager
 
 
 class ConnectionManager:

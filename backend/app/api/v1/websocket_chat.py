@@ -14,12 +14,8 @@ ws_chat = APIRouter()
 @ws_chat.websocket('/{chat_id}')
 async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Depends(get_db)):
 
-    print("connected")
-
     current_user = await get_current_user_ws(websocket=websocket, db=db)
 
-    print("authenticated")
-    print(current_user)
     member = db.query(ChatMembers).filter(
         ChatMembers.chat_id == chat_id, ChatMembers.user_id == current_user.id).first()
 
@@ -84,7 +80,7 @@ async def websocket_chat(chat_id: UUID, websocket: WebSocket,  db: Session = Dep
                 size = content['size']
                 is_group = data.get("is_group")
                 sender = content['sender']
-                print(sender)
+
                 file_message = db.query(Message).filter(
                     Message.unique_name == unique_name).one_or_none()
 

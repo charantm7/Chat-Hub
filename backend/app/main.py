@@ -9,7 +9,7 @@ from app.api import api_router
 from app.core.config import settings
 from app.services.user_service import get_current_user
 from app.models.user_model import Users
-from app.core.redis_script import redis_manager, pubsub_manager
+from backend.app.core.redis_script import redis_manager, pubsub_manager
 
 
 @asynccontextmanager
@@ -55,6 +55,6 @@ async def favicon():
     return Response(status_code=status.HTTP_200_OK)
 
 
-@app.get('/')
+@app.get('/health')
 async def health(current_user: Users = Depends(get_current_user)):
     return current_user

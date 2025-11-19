@@ -432,3 +432,47 @@ async def find_user_through_message(db, message_id):
             status_code=404, detail="user not found with message id")
 
     return user.sender_id
+
+
+async def delete_messages(message_id, db, current_user):
+
+    message_query = db.query(Message).filter(
+        Message.id == message_id, Message.sender_id == current_user.id)
+
+    message = message_query.one_or_none()
+
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+
+    message_query.delete(synchronize_session=False)
+    db.commit()
+
+    return {'msg': 'Message deleted'}
+
+
+async def mark_read_messages_service(
+        chat_id,
+        current_user,
+        db
+):
+
+    message = db.query(Message).filter(
+        Message.chat_id == chat_id,
+        Message.sender_id != current_user.id,
+        Message.is_read == False
+
+    ).update({"is_read": True})
+
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='no unread messages')
+
+    db.commit()
+
+    return {'msg': 'marked as read'}
+
+
+class ChatService:
+    def __init__(self):
+        pass

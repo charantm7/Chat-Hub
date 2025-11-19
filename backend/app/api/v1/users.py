@@ -12,7 +12,7 @@ from app.core.psql_connection import get_db
 from app.models.user_model import Users, FriendRequest, RequestStatus
 from app.services import user_service
 from app.schemas.user_schema import RefreshToken, UpdateProfile
-from app.core.redis_script import redis_manager
+from backend.app.core.redis_script import redis_manager
 
 router = APIRouter()
 
@@ -81,7 +81,6 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
 @router.post('/refresh')
 async def refresh(token: RefreshToken):
-    print(token.token)
 
     return await security.validate_refresh_token(token=token.token)
 
@@ -119,7 +118,7 @@ async def get_users(db: Session = Depends(get_db), current_user: Users = Depends
 
 @router.put("/update/my/profile")
 async def update_my_profile(user_info: UpdateProfile, db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
-    print(user_info)
+
     user_query = db.query(Users).filter(Users.id == current_user.id)
 
     user = user_query.first()

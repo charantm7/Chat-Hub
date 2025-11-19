@@ -1,16 +1,26 @@
 import mimetypes
 import os
 from uuid import UUID, uuid4
-from fastapi import Body, APIRouter, Depends, Form, HTTPException, UploadFile, File, status, BackgroundTasks, Request
-
+from fastapi import (
+    Body,
+    APIRouter,
+    Depends,
+    Form,
+    HTTPException,
+    UploadFile,
+    File,
+    status,
+    BackgroundTasks,
+    Request)
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+
 
 from app.core.psql_connection import get_db
 from app.schemas.user_schema import FriendRequestSchema
 from app.models.user_model import Users, Chats, ChatMembers, Message
 from app.services.user_service import get_current_user
-from app.services.chat_service import (
+from .service import (
     send_friend_request,
     incomming_friend_request,
     accept_friend_request,
@@ -18,6 +28,8 @@ from app.services.chat_service import (
     get_accepted_friends,
     send_messages,
     get_messages,
+    delete_messages,
+    mark_read_messages_service
 )
 from backend.app.services import user_service
 from app.core.websocket import manager
@@ -95,39 +107,13 @@ async def get_message(
 
 @chat.delete('/delete/{message_id}')
 async def delete_message(message_id: UUID, db: Session = Depends(get_db), current_user: Users = Depends(user_service.get_current_user)):
-
-    message_query = db.query(Message).filter(
-        Message.id == message_id, Message.sender_id == current_user.id)
-
-    message = message_query.one_or_none()
-
-    if not message:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
-
-    message_query.delete(synchronize_session=False)
-    db.commit()
-
-    return {'msg': 'Message deleted'}
+    return await delete_messages(message_id=message_id, db=db, current_user=current_user)
 
 
 @chat.post('/markread/{chat_id}')
 async def mark_read_messages(chat_id: UUID, current_user: Users = Depends(user_service.get_current_user), db: Session = Depends(get_db)):
 
-    message = db.query(Message).filter(
-        Message.chat_id == chat_id,
-        Message.sender_id != current_user.id,
-        Message.is_read == False
-
-    ).update({"is_read": True})
-
-    if not message:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='no unread messages')
-
-    db.commit()
-
-    return {'msg': 'marked as read'}
+    return await mark_read_messages_service(chat_id=chat_id,  current_user=current_user, db=db)
 
 
 @chat.post('/file/upload')
