@@ -169,4 +169,3 @@ async def create_group(
         current_user: Users = Depends(user_service.get_current_user)):
 
     return await ChatService(db=db, current_user=current_user).create_group_service(name=name, member_ids=member_ids)
-#
