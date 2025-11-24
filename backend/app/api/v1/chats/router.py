@@ -50,7 +50,7 @@ async def send_request(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    return await send_friend_request(db=db, current_user=current_user, data=data, backgroundTask=backgroundTask)
+    return await ChatService(db=db, current_user=current_user).send_friend_request(data=data, backgroundTask=backgroundTask)
 
 
 @chat.get('/friend-requests')
@@ -58,7 +58,7 @@ async def incomming_request(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    return await incomming_friend_request(db=db, current_user=current_user)
+    return await ChatService(db=db, current_user=current_user).incomming_friend_request()
 
 
 @chat.post('/friend-requests/{id}/accept')
@@ -67,7 +67,7 @@ async def accept_request(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    return await accept_friend_request(db=db, current_user=current_user, id=id)
+    return await ChatService(db=db, current_user=current_user).accept_friend_request(id=id)
 
 
 @chat.post('/friend-requests/{id}/reject')
@@ -75,14 +75,14 @@ async def reject_request(
     id: UUID,
     db: Session = Depends(get_db), current_user: Users = Depends(get_current_user)
 ):
-    return await reject_friend_request(db=db, current_user=current_user, id=id)
+    return await ChatService(db=db, current_user=current_user).reject_friend_request(id=id)
 
 
 @chat.get('/friends')
 async def get_friends(
     db: Session = Depends(get_db), current_user: Users = Depends(get_current_user)
 ):
-    return await get_accepted_friends(db=db, current_user=current_user)
+    return await ChatService(db=db, current_user=current_user).get_accepted_friends()
 
 
 @chat.post('/{chat_id}/message')
@@ -92,9 +92,9 @@ async def send_message(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    return await send_messages(
-        db=db, chat_id=chat_id,
-        content=content, current_user=current_user
+    return await ChatService(current_user=current_user, db=db).send_messages(
+        chat_id=chat_id,
+        content=content
     )
 
 
@@ -104,7 +104,7 @@ async def get_message(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    return await get_messages(db=db, chat_id=chat_id)
+    return await ChatService(db=db, current_user=current_user).get_messages(chat_id=chat_id)
 
 
 @chat.delete('/delete/{message_id}')
@@ -112,7 +112,7 @@ async def delete_message(
         message_id: UUID,
         db: Session = Depends(get_db),
         current_user: Users = Depends(user_service.get_current_user)):
-    return await delete_messages(message_id=message_id, db=db, current_user=current_user)
+    return await ChatService(db=db, current_user=current_user).delete_messages(message_id=message_id)
 
 
 @chat.post('/markread/{chat_id}')
@@ -121,7 +121,7 @@ async def mark_read_messages(
         current_user: Users = Depends(user_service.get_current_user),
         db: Session = Depends(get_db)):
 
-    return await mark_read_messages_service(chat_id=chat_id,  current_user=current_user, db=db)
+    return await ChatService(db=db, current_user=current_user).mark_read_messages_service(chat_id=chat_id, )
 
 
 @chat.post('/file/upload')
@@ -169,4 +169,3 @@ async def create_group(
         current_user: Users = Depends(user_service.get_current_user)):
 
     return await ChatService(db=db, current_user=current_user).create_group_service(name=name, member_ids=member_ids)
-#
