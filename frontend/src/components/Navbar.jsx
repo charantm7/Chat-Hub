@@ -151,6 +151,7 @@ function Navbar({ onSelect }) {
         <FontAwesomeIcon icon={faCircleQuestion} className="text-[19px] cursor-pointer" />
         <FontAwesomeIcon
           icon={faGear}
+          onClick={() => navigate("/settings")}
           className="text-[17px] transition-transform hover:animate-spin cursor-pointer"
         />
         <FontAwesomeIcon
