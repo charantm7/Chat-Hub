@@ -203,7 +203,7 @@ async def delete_msg(message_id: UUID, db: Session = Depends(get_db)):
     message.is_deleted = True
     db.commit()
 
-    await manager.broadcast(message.chat_id, {
+    await manager.broadcast(message.chat_id, user_ids=[], message={
         'type': "delete_message",
         'message_id': str(message_id),
         'chat_id': str(message.chat_id)

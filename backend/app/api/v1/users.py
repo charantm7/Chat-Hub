@@ -28,6 +28,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
     try:
         token = await security.oauth.google.authorize_access_token(request)
+
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Google authentication Failed {e}")
@@ -49,6 +50,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     picture = user_info['picture']
     id = user_info['id']
     is_verified = user_info['verified_email']
+
+    print(user_info)
 
     if not is_verified:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,

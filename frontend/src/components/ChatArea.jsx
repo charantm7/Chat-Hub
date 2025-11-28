@@ -74,7 +74,7 @@ function ChatArea({ users, onCancleSelect }) {
   const messagesEndRef = useRef(null);
   const [typingUser, setTypingUser] = useState([]);
   const [messageInfo, setMessageInfo] = useState("");
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState({});
   const fileInputRef = useRef(null);
   const [editContent, setEditContent] = useState(null);
   const [replyMessage, setReplyMessage] = useState(null);
@@ -431,84 +431,85 @@ function ChatArea({ users, onCancleSelect }) {
   //   [sendTypingIndicatorTrue, sendTypingIndicatorFalse]
   // );
 
-  // const handleFileUpload = async () => {
-  //   if (!file) return alert("Please select a file");
+  const handleFileUpload = async (file, chat_id, is_group) => {
+    if (!file) return alert("Please select a file");
 
-  //   const formData = new FormData();
+    const formData = new FormData();
 
-  //   formData.append("file", file);
-  //   formData.append("sender_id", currentUserID?.id);
-  //   formData.append("chat_id", user?.chat_id);
-  //   formData.append("is_group", user?.is_group);
+    formData.append("file", file);
+    formData.append("sender_id", currentUserID?.id);
+    formData.append("chat_id", chat_id);
+    formData.append("is_group", is_group);
 
-  //   try {
-  //     const res = await fetch(`http://127.0.0.1:8000/v1/chat/file/upload`, {
-  //       method: "POST",
-  //       body: formData,
-  //     });
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/v1/chat/file/upload`, {
+        method: "POST",
+        body: formData,
+      });
 
-  //     if (!res.ok) {
-  //       throw new Error("Upload failed");
-  //     }
-  //     setFile(null);
-  //     setShowModal(null);
+      if (!res.ok) {
+        throw new Error("Upload failed");
+      }
+      setFile(null);
+      setShowModal(null);
 
-  //     const response = await res.json();
+      const response = await res.json();
 
-  //     console.log(response);
+      console.log(response);
 
-  //     if (socketRef.current?.readyState === WebSocket.OPEN) {
-  //       socketRef.current.send(
-  //         JSON.stringify({
-  //           type: "file",
-  //           sender_id: currentUserID?.id,
-  //           data: {
-  //             file_url: response.url,
-  //             file_name: response.file_name,
-  //             file_type: response.file_type,
-  //             unique_name: response.unique_name,
-  //             size: response.size,
-  //             is_group: response.is_group,
-  //             sender: response.sender,
-  //           },
-  //         })
-  //       );
-  //     }
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(
+          JSON.stringify({
+            type: "file",
+            sender_id: currentUserID?.id,
+            data: {
+              chat_id: chat_id,
+              file_url: response.url,
+              file_name: response.file_name,
+              file_type: response.file_type,
+              unique_name: response.unique_name,
+              size: response.size,
+              is_group: response.is_group,
+              sender: response.sender,
+            },
+          })
+        );
+      }
 
-  //     const newFileMessage = {
-  //       id: "temp-" + crypto.randomUUID(),
-  //       sender_id: currentUserID?.id,
-  //       file_name: response.file_name,
-  //       type: "file",
-  //       size: response.size,
-  //       url: response.file_url,
-  //       file_type: response.file_type,
-  //       unique_name: response.unique_name,
-  //       chat_id: user?.chat_id,
-  //       sent_at: new Date().toISOString(),
-  //       is_deleted: false,
-  //       is_group: response.is_group,
-  //       sender: response.sender,
-  //     };
-  //     setMessages((prev) => {
-  //       const previous = prev[user?.chat_id] || [];
-  //       return {
-  //         ...prev,
-  //         [user?.chat_id]: [...previous, newFileMessage],
-  //       };
-  //     });
-  //   } catch (e) {
-  //     console.log("upload error", e);
-  //     alert("upload failed");
-  //   }
-  // };
+      const newFileMessage = {
+        id: response.id,
+        sender_id: currentUserID?.id,
+        file_name: response.file_name,
+        type: "file",
+        size: response.size,
+        file_url: response.url,
+        file_type: response.file_type,
+        unique_name: response.unique_name,
+        chat_id: chat_id,
+        sent_at: new Date().toISOString(),
+        is_deleted: false,
+        is_group: response.is_group,
+        sender: response.sender,
+      };
+      setMessages((prev) => {
+        const previous = prev[chat_id] || [];
+        return {
+          ...prev,
+          [chat_id]: [...previous, newFileMessage],
+        };
+      });
+    } catch (e) {
+      console.log("upload error", e);
+      alert("upload failed");
+    }
+  };
 
-  // const resetFile = () => {
-  //   setFile(null);
-  //   if (fileInputRef.current) {
-  //     fileInputRef.current.value = "";
-  //   }
-  // };
+  const resetFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   function formatFileSize(bytes) {
     if (bytes == null || isNaN(bytes)) return "-";
@@ -1570,7 +1571,7 @@ function ChatArea({ users, onCancleSelect }) {
                         onChange={(e) => {
                           const selectfile = e.target.files[0];
                           if (selectfile) {
-                            setFile(selectfile);
+                            setFile({ file: selectfile, chat_id: user?.chat_id, is_group: user?.is_group });
                             setShowModal("file");
                           }
                           e.target.value = "";
@@ -1694,12 +1695,13 @@ function ChatArea({ users, onCancleSelect }) {
             <div className="bg-[#ffffffd0] border border-black/10 p-3 rounded-2xl overflow-hidden">
               {file && (
                 <div className="space-y-3">
-                  <p className="text-sm">📄 {file.name}</p>
+                  <p className="text-sm">📄 {file.file.name}</p>
 
                   {/* Image preview if applicable */}
-                  {file.type.startsWith("image/") && (
+
+                  {file.file.type.startsWith("image/") && (
                     <img
-                      src={URL.createObjectURL(file)}
+                      src={URL.createObjectURL(file.file)}
                       alt="preview"
                       className="max-h-40 rounded-md border"
                     />
@@ -1717,7 +1719,7 @@ function ChatArea({ users, onCancleSelect }) {
                     </button>
                     <button
                       className="bg-blue-500 text-white text-md pl-2 pr-2 cursor-pointer rounded-[4px] hover:bg-blue-600"
-                      onClick={handleFileUpload}
+                      onClick={() => handleFileUpload(file.file, file.chat_id, file.is_group)}
                     >
                       Send
                     </button>

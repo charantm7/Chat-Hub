@@ -30,11 +30,8 @@ async def get_user(db: Session, email: Optional[str] = None) -> Optional[Users]:
 
     result = db.query(Users).filter(Users.email == email)
     user = result.one_or_none()
-
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
+        return None
     user_data = User.model_validate(user)
     await client.set(f"user:{email}", json.dumps(user_data.model_dump(mode='json')), ex=3600)
 
