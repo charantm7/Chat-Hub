@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, List
+from typing import Dict, List, Set
 from uuid import UUID
 from fastapi import WebSocket
 import json
@@ -16,6 +16,8 @@ class ConnectionManager:
         self.pubsub = pubsub_manager
         self.server_id = str(uuid.uuid4())
         self.redis = None
+        self.subscribed_chat: Set[UUID] = set()
+        self.users_in_chat: Dict[int, Set[UUID]] = {}
 
     async def connect(self, chat_id: UUID, user_id: int, websocket: WebSocket):
 
@@ -30,7 +32,13 @@ class ConnectionManager:
         await self.redis.sadd(f"chat:{chat_id}:connections",
                               f"{self.server_id}:{user_id}")
 
-        await self.pubsub.subscribe(chat_id=chat_id)
+        if chat_id not in self.subscribed_chat:
+            await self.pubsub.subscribe(chat_id=chat_id)
+            self.subscribed_chat.add(chat_id)
+
+        if user_id not in self.users_in_chat:
+            self.users_in_chat[user_id] = set()
+        self.users_in_chat[user_id].add(chat_id)
 
         await websocket.send_json({"Message": "Connected to chat"})
 
@@ -41,10 +49,17 @@ class ConnectionManager:
 
             if not self.local_connections[chat_id]:
                 del self.local_connections[chat_id]
+                self.subscribed_chat.remove(chat_id)
                 await self.pubsub.unsubscribe(chat_id=chat_id)
 
         await self.redis.srem(f"chat:{chat_id}:connections",
                               f"{self.server_id}:{user_id}")
+
+        if user_id in self.users_in_chat:
+            self.users_in_chat[user_id].remove(chat_id)
+
+            if not self.users_in_chat[user_id]:
+                del self.users_in_chat[user_id]
 
     async def broadcast(self, chat_id: UUID, message: dict):
 

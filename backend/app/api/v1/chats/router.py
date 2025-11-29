@@ -21,15 +21,7 @@ from app.schemas.user_schema import FriendRequestSchema
 from app.models.user_model import Users, Chats, ChatMembers, Message
 from app.services.user_service import get_current_user
 from .service import (
-    send_friend_request,
-    incomming_friend_request,
-    accept_friend_request,
-    reject_friend_request,
-    get_accepted_friends,
-    send_messages,
-    get_messages,
-    delete_messages,
-    mark_read_messages_service,
+
     ChatService,
     ChatOnWebsocket
 )

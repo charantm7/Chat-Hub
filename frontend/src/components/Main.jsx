@@ -12,6 +12,8 @@ function Main({ selectedModal, onSelect }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
 
+  console.log("current user", currentUser);
+
   function handleOverlayClick(e) {
     if (e.target.id === "overlay") {
       onSelect(null);

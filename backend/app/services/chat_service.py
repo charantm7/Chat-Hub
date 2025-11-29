@@ -293,7 +293,7 @@ async def get_accepted_friends(db: Session, current_user):
             ),
             reverse=True
         )
-    print(friends)
+
     return friends
 
 

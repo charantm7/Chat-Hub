@@ -55,6 +55,6 @@ async def favicon():
     return Response(status_code=status.HTTP_200_OK)
 
 
-@app.get('/health')
+@app.get('/')
 async def health(current_user: Users = Depends(get_current_user)):
     return current_user

@@ -35,7 +35,6 @@ def save_friend_request_to_db(db: Session, from_user: int, to_user: int):
     db.add(new_request)
     db.commit()
     db.refresh(new_request)
-    print(datetime.now())
 
 
 async def update_read_receipt(db, message_id, status):
@@ -121,7 +120,7 @@ class ChatService:
         }
 
         await client.set(f'friend_request:{target_user.id}-{self.current_user.id}', json.dumps(request_data))
-        print(datetime.now())
+
         backgroundTask.add_task(save_friend_request_to_db,
                                 self.db, self.current_user.id, target_user.id)
 
@@ -326,7 +325,7 @@ class ChatService:
                 ),
                 reverse=True
             )
-        print(friends)
+
         return friends
 
     async def send_messages(self, chat_id, content):
