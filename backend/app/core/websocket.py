@@ -39,7 +39,7 @@ class ConnectionManager:
         if user_id not in self.users_in_chat:
             self.users_in_chat[user_id] = set()
         self.users_in_chat[user_id].add(chat_id)
-
+#
         await websocket.send_json({"Message": "Connected to chat"})
 
     async def disconnect(self, chat_id: UUID, user_id: int, websocket: WebSocket):
