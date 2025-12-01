@@ -5,7 +5,10 @@ from fastapi import WebSocket
 import json
 import uuid
 
+
 from backend.app.core.redis_script import pubsub_manager, redis_manager
+from backend.app.core.logging_config import get_logger
+logger = get_logger(__name__)
 
 
 class ConnectionManager:
@@ -19,14 +22,22 @@ class ConnectionManager:
         self.subscribed_chat: Set[UUID] = set()
         self.users_in_chat: Dict[int, Set[UUID]] = {}
 
+        logger.info(
+            f"ConnectionManager initialized with server ID {self.server_id}")
+
     async def connect(self, chat_id: UUID, user_id: int, websocket: WebSocket):
+
+        logger.info(f"Connecting user {user_id} to chat {chat_id}")
 
         await websocket.accept()
 
         if chat_id not in self.local_connections:
+            logger.debug(
+                f"Creating new Local connection list for chat {chat_id}")
             self.local_connections[chat_id] = []
 
         self.local_connections[chat_id].append(websocket)
+
         if self.redis is None:
             self.redis = await redis_manager.get_client()
         await self.redis.sadd(f"chat:{chat_id}:connections",
@@ -39,7 +50,8 @@ class ConnectionManager:
         if user_id not in self.users_in_chat:
             self.users_in_chat[user_id] = set()
         self.users_in_chat[user_id].add(chat_id)
-#
+
+        logger.info(f"User {user_id} connected to chat {chat_id}")
         await websocket.send_json({"Message": "Connected to chat"})
 
     async def disconnect(self, chat_id: UUID, user_id: int, websocket: WebSocket):
