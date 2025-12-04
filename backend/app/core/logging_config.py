@@ -3,7 +3,6 @@ from logging.handlers import RotatingFileHandler
 from math import log
 import os
 
-
 LOG_DIR = "logs"
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)

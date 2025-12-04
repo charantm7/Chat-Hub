@@ -15,6 +15,8 @@ function Navbar({ onSelect }) {
   const [requestStatus, setRequestStatus] = useState({});
   const [user, setUser] = useState([]);
 
+  console.log("hi", user);
+
   const handleOverlayClick = (e) => {
     if (e.target.id == "overlay") {
       setShowModal(null);
