@@ -18,17 +18,12 @@ function AuthCallBack() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
-    const refresh = params.get("refresh");
 
-    if (token && refresh) {
+    if (token) {
       const access_decode = jwtDecode(token);
-      const refresh_decode = jwtDecode(refresh);
       const accessExpiry = new Date(access_decode.exp * 1000);
-      const refreshExpiry = new Date(refresh_decode.exp * 1000);
       localStorage.setItem("token", token);
-      localStorage.setItem("refresh", refresh);
       localStorage.setItem("accessExpiry", accessExpiry);
-      localStorage.setItem("refreshExpiry", refreshExpiry);
       requestNotificationPermission();
       setTimeout(() => navigate("/chat", { replace: true }), 0);
     } else {

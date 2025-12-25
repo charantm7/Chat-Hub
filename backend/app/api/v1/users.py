@@ -32,7 +32,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         token = await security.oauth.google.authorize_access_token(request)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Google authentication Failed {e}")
+                            detail=f"Google authentication Failed: {e}")
 
     access_token = token.get('access_token')
     userinfo = token.get('userinfo')
@@ -54,7 +54,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
     if not is_verified:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Goole account not verified")
+                            detail="Google account not verified")
 
     if iss not in ['https://accounts.google.com']:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -68,11 +68,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
     if not user:
 
-        new_user = Users(name=name, email=email,
+        user = Users(name=name, email=email,
                          picture=picture, is_verified=is_verified)
-        db.add(new_user)
+        db.add(user)
         db.commit()
-        db.refresh(new_user)
+        db.refresh(user)
 
     jwt_token = await security.create_access_token({"email": email})
     refresh_token = await security.create_refresh_token(db=db, user_id = user.id)
@@ -80,8 +80,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     
 
     response = RedirectResponse(
-        url="http://localhost:5173/auth/callback",
-        status_code=status.HTTP_302_FOUND
+        url=f"http://localhost:5173/auth/callback?token={jwt_token}",
+        status_code=status.HTTP_303_SEE_OTHER
     )
 
     response.set_cookie(
@@ -94,7 +94,6 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         path="/v1/auth/refresh"
 
     )
-    response.headers['Authorization'] = f"Bearer {jwt_token}"
 
     return response
 
@@ -116,7 +115,7 @@ async def refresh(request: Request, db: Session = Depends(get_db)):
 
     for token in tokens:
 
-        if security.hasing_context.verify(refresh_token, token.token_hash):
+        if security.hash_refresh_token(refresh_token) == token.token_hash:
             matched_token = token
             break
 

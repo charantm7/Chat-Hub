@@ -1,4 +1,5 @@
 import secrets
+import hashlib
 import jwt
 from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
 from jose import JWTError
@@ -35,8 +36,12 @@ oauth.register(
 
 hasing_context = CryptContext(schemes=["bcrypt"], deprecated='auto')
 
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
 
 async def create_access_token(data: dict) -> str:
+
 
     if not data:
         raise HTTPException(
@@ -59,7 +64,7 @@ async def create_refresh_token(db:Session, user_id) -> str:
 
     refresh_token = secrets.token_urlsafe(32)
     
-    hashed_refresh_token = hasing_context.hash(refresh_token)
+    hashed_refresh_token = hash_refresh_token(refresh_token)
 
     refresh_db =  RefreshTokenModel(
         user_id = user_id,
@@ -110,7 +115,7 @@ async def validate_refresh_token(token):
 
 
 async def validate_access_token(token):
-    client = await redis_manager.get_client()
+   
 
     credential_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -126,11 +131,7 @@ async def validate_access_token(token):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get('email')
 
-        cached_access_token = await client.get(f"access_session:{email}")
-
-        if not cached_access_token or cached_access_token != token:
-            raise HTTPException(
-                status_code=401, detail="Session expired or invalid")
+        
 
         if not email:
             raise credential_exception

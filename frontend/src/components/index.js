@@ -2,25 +2,14 @@ import { jwtDecode } from "jwt-decode";
 
 export function isAccessTokenExpired() {
   const expiry = localStorage.getItem("accessExpiry");
-  return !expiry || Date.now() * 1000 > parseInt(expiry);
-}
-
-export function isRefreshTokenExpired() {
-  const expiry = localStorage.getItem("refreshExpiry");
-  return !expiry || Date.now() * 1000 > parseInt(expiry);
+  return !expiry || Date.now() * 1000 > Number(expiry);
 }
 
 export async function refreshAccessToken() {
-  const refresh = localStorage.getItem("refresh");
-  if (!refresh || isRefreshTokenExpired()) {
-    return null;
-  }
-
   try {
     const res = await fetch("http://127.0.0.1:8000/v1/auth/refresh", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: refresh }),
+      credentials: "include",
     });
     if (!res.ok) throw new Error("Refresh Failed");
     const data = await res.json();
@@ -42,14 +31,13 @@ export async function refreshAccessToken() {
 
 export function logout() {
   localStorage.removeItem("token");
-  localStorage.removeItem("refresh");
   localStorage.removeItem("accessExpiry");
-  localStorage.removeItem("refreshExpiry");
   window.location.href = "/";
 }
 
 export async function GetValidAccessToken() {
   if (isAccessTokenExpired()) {
+    console.log("expired");
     return await refreshAccessToken();
   }
   console.log("not expired");

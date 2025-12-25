@@ -70,6 +70,7 @@ function Main({ selectedModal, onSelect }) {
   useEffect(() => {
     async function get_current_user() {
       const token = await GetValidAccessToken();
+      console.log("token:", token);
       try {
         const res = await fetch("http://127.0.0.1:8000/", {
           method: "GET",
