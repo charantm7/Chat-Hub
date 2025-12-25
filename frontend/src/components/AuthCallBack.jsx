@@ -19,18 +19,29 @@ function AuthCallBack() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
 
-    if (token) {
-      const access_decode = jwtDecode(token);
-      const accessExpiry = new Date(access_decode.exp * 1000);
+    if (!token) {
+      console.error("No token found in URL");
+      navigate("/authentication");
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+
+      // ✅ Store expiry as milliseconds (number)
+      const accessExpiry = decoded.exp * 1000;
+
       localStorage.setItem("token", token);
-      localStorage.setItem("accessExpiry", accessExpiry);
+      localStorage.setItem("accessExpiry", accessExpiry.toString());
+
       requestNotificationPermission();
       setTimeout(() => navigate("/chat", { replace: true }), 0);
-    } else {
-      console.error("No token found in URL");
+    } catch (err) {
+      console.error("Invalid access token", err);
       navigate("/authentication");
     }
   }, [navigate]);
+
   return <div>Logging in...</div>;
 }
 
