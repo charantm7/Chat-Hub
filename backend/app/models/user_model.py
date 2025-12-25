@@ -96,7 +96,7 @@ class FriendRequest(Base):
     to_user = relationship("Users", foreign_keys=[to_user_id])
 
 
-class RefreshToken(Base):
+class RefreshTokenModel(Base):
 
     __tablename__ = "refreshtoken"
 
@@ -106,3 +106,4 @@ class RefreshToken(Base):
     expire_at = Column(TIMESTAMP(timezone=True), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True),
                         server_default=text('now()'), nullable=False)
+    is_revoked = Column(Boolean, default=False)

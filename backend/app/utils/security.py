@@ -7,9 +7,11 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status, Depends
 from authlib.integrations.starlette_client import OAuth
 from passlib.context import CryptContext
+from requests import Session
 
 from app.core.config import settings
 from app.schemas import user_schema
+from app.models.user_model import RefreshTokenModel
 
 from app.core.redis_script import redis_manager
 
@@ -52,18 +54,25 @@ async def create_access_token(data: dict) -> str:
     return access_token
 
 
-async def create_refresh_token(data: dict) -> str:
+async def create_refresh_token(db:Session, user_id) -> str:
     client = await redis_manager.get_client()
-
-    if not data:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Data not found!")
 
     refresh_token = secrets.token_urlsafe(32)
     
+    hashed_refresh_token = hasing_context.hash(refresh_token)
 
-    await client.setex(f"refresh_session:{data['email']}",
-                       REFRESH_TOKEN_EXPIRE_DAYS*60*60*60, refresh_token)
+    refresh_db =  RefreshTokenModel(
+        user_id = user_id,
+        token_hash = hashed_refresh_token,
+        expire_at = datetime.now(timezone.utc) + timedelta(days=7)
+
+    )
+
+    db.add(refresh_db)
+    db.commit()
+    db.refresh(refresh_db)
+    await client.setex(f"refresh_session:",
+                       REFRESH_TOKEN_EXPIRE_DAYS*24*60*60, hashed_refresh_token)
 
     return refresh_token
 

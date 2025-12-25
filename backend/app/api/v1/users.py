@@ -1,15 +1,17 @@
+import datetime
 from operator import and_, not_, or_
 import httpx
 
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.utils import security
 from app.core.psql_connection import get_db
-from app.models.user_model import Users, FriendRequest, RequestStatus
+from app.models.user_model import Users, FriendRequest, RequestStatus, RefreshTokenModel
 from app.services import user_service
 from app.schemas.user_schema import RefreshToken, UpdateProfile
 from app.core.redis_script import redis_manager
@@ -73,16 +75,66 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         db.refresh(new_user)
 
     jwt_token = await security.create_access_token({"email": email})
-    refresh_token = await security.create_refresh_token({"email": email})
-    frontend_url = f"http://localhost:5173/auth/callback?token={jwt_token}&refresh={refresh_token}"
+    refresh_token = await security.create_refresh_token(db=db, user_id = user.id)
 
-    return RedirectResponse(url=frontend_url)
+    
+
+    response = RedirectResponse(
+        url="http://localhost:5173/auth/callback",
+        status_code=status.HTTP_302_FOUND
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=60*60*24*7,
+        path="/v1/auth/refresh"
+
+    )
+    response.headers['Authorization'] = f"Bearer {jwt_token}"
+
+    return response
 
 
 @router.post('/refresh')
-async def refresh(token: RefreshToken):
+async def refresh(request: Request, db: Session = Depends(get_db)):
 
-    return await security.validate_refresh_token(token=token.token)
+    refresh_token = request.cookies.get('refresh_token')
+
+    if not refresh_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token not found")
+
+    tokens = db.query(RefreshTokenModel).filter(RefreshTokenModel.is_revoked == False, RefreshTokenModel.expire_at > datetime.now(timezone.utc)).all()
+
+    matched_token = None
+
+    if not tokens:
+        raise HTTPException(status_code=401, detail="No valid refresh tokens")
+
+    for token in tokens:
+
+        if security.hasing_context.verify(refresh_token, token.token_hash):
+            matched_token = token
+            break
+
+    if not matched_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token"
+        )
+    
+    user_email = db.query(Users.email).filter(Users.id == matched_token.id).one_or_none()
+
+   
+    access_token = await security.create_access_token({"email": user_email})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
 @router.get("/get-users")
