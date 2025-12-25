@@ -12,7 +12,7 @@ from app.core.psql_connection import get_db
 from app.models.user_model import Users, FriendRequest, RequestStatus
 from app.services import user_service
 from app.schemas.user_schema import RefreshToken, UpdateProfile
-from backend.app.core.redis_script import redis_manager
+from app.core.redis_script import redis_manager
 
 router = APIRouter()
 

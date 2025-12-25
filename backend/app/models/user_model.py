@@ -94,3 +94,15 @@ class FriendRequest(Base):
 
     from_user = relationship("Users", foreign_keys=[from_user_id])
     to_user = relationship("Users", foreign_keys=[to_user_id])
+
+
+class RefreshToken(Base):
+
+    __tablename__ = "refreshtoken"
+
+    id = Column(UUID, primary_key=True, unique=True, default=uuid4)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
+    token_hash = Column(String, nullable=False)
+    expire_at = Column(TIMESTAMP(timezone=True), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True),
+                        server_default=text('now()'), nullable=False)

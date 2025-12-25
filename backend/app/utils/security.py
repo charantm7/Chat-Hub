@@ -1,15 +1,17 @@
+import secrets
 import jwt
 from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
 from jose import JWTError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status, Depends
 from authlib.integrations.starlette_client import OAuth
-
+from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.schemas import user_schema
-from backend.app.core.redis_script import redis_manager
+
+from app.core.redis_script import redis_manager
 
 
 ALGORITHM = settings.ALGORITHM
@@ -29,24 +31,24 @@ oauth.register(
     }
 )
 
+hasing_context = CryptContext(schemes=["bcrypt"], deprecated='auto')
+
 
 async def create_access_token(data: dict) -> str:
-    client = await redis_manager.get_client()
 
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Data not found!")
 
     to_endcode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + \
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_endcode.update({'exp': expire})
 
-    access_token = jwt.encode(to_endcode, SECRET_KEY, algorithm=ALGORITHM)
+    access_token = jwt.encode(
+        payload=to_endcode, key=SECRET_KEY, algorithm=ALGORITHM)
 
-    await client.setex(f"access_session:{data['email']}",
-                       ACCESS_TOKEN_EXPIRE_MINUTES*60, access_token)
-    print(access_token)
     return access_token
 
 
@@ -57,11 +59,8 @@ async def create_refresh_token(data: dict) -> str:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Data not found!")
 
-    to_encode = data.copy()
-    expire_time = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({'exp': expire_time, 'type': 'refresh'})
-
-    refresh_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    refresh_token = secrets.token_urlsafe(32)
+    
 
     await client.setex(f"refresh_session:{data['email']}",
                        REFRESH_TOKEN_EXPIRE_DAYS*60*60*60, refresh_token)
@@ -90,7 +89,8 @@ async def validate_refresh_token(token):
         if not email:
             raise credential_exception
 
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + \
+            timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode = {'email': email, 'exp': expire}
         access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 

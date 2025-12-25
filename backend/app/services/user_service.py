@@ -9,7 +9,7 @@ from app.schemas.user_schema import User
 from app.models.user_model import Users
 from app.utils import security
 from app.core.psql_connection import get_db
-from backend.app.core.redis_script import redis_manager
+from app.core.redis_script import redis_manager
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl='/v1/auth/google/callback')
 
@@ -32,8 +32,7 @@ async def get_user(db: Session, email: Optional[str] = None) -> Optional[Users]:
     user = result.one_or_none()
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return None
 
     user_data = User.model_validate(user)
     await client.set(f"user:{email}", json.dumps(user_data.model_dump(mode='json')), ex=3600)

@@ -9,3 +9,8 @@ authlib
 google-auth
 python-jose[cryptography]
 pydantic-settings
+sqladmin
+razorpay
+pyjwt
+pytz
+redis

@@ -25,7 +25,7 @@ from .service import (
     ChatService,
     ChatOnWebsocket
 )
-from backend.app.services import user_service
+from app.services import user_service
 from app.core.websocket import manager
 
 

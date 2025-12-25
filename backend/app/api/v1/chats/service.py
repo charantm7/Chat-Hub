@@ -13,7 +13,7 @@ from sqlalchemy.orm import aliased, Session
 
 from app.schemas.chat_schema import FriendRequestValidate
 from app.schemas.user_schema import User
-from backend.app.core.redis_script import redis_manager
+from app.core.redis_script import redis_manager
 from app.core.websocket import manager
 from app.models.user_model import (
     Users,
