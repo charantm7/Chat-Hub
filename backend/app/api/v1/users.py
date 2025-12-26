@@ -88,8 +88,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=True,
+        samesite="none",
         max_age=60*60*24*7,
         path="/v1/auth/refresh"
 
@@ -98,12 +98,14 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     return response
 
 
-@router.post('/refresh')
+@router.get('/refresh')
 async def refresh(request: Request, db: Session = Depends(get_db)):
 
     refresh_token = request.cookies.get('refresh_token')
+    
 
     if not refresh_token:
+        print("noo refresh token")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token not found")
 
     tokens = db.query(RefreshTokenModel).filter(RefreshTokenModel.is_revoked == False, RefreshTokenModel.expire_at > datetime.now(timezone.utc)).all()
@@ -125,9 +127,9 @@ async def refresh(request: Request, db: Session = Depends(get_db)):
             detail="Invalid refresh token"
         )
     
-    user_email = db.query(Users.email).filter(Users.id == matched_token.id).one_or_none()
+    user_email = db.query(Users.email).filter(Users.id == matched_token.user_id).scalar()
 
-   
+    
     access_token = await security.create_access_token({"email": user_email})
 
     return {

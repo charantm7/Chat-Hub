@@ -8,7 +8,7 @@ export function isAccessTokenExpired() {
 export async function refreshAccessToken() {
   try {
     const res = await fetch("http://127.0.0.1:8000/v1/auth/refresh", {
-      method: "POST",
+      method: "GET",
       credentials: "include",
     });
 

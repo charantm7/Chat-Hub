@@ -1,0 +1,10 @@
+{
+  "postman.settings.dotenv-detection-notification-visibility": false,
+
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "never"
+    },
+    "editor.formatOnSave": false
+  }
+}
