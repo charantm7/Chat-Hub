@@ -58,16 +58,16 @@ function Authentication() {
 
   if (loading) {
     return (
-      <div className="p-4 space-y-3 animate-pulse">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <div className="w-[40px] h-[40px] rounded-full bg-gray-700"></div>
-            <div className="flex-1">
-              <div className="w-1/3 h-3 bg-gray-700 rounded mb-2"></div>
-              <div className="w-1/2 h-2 bg-gray-600 rounded"></div>
-            </div>
+      <div className="h-screen bg-[#0b0f1a] flex flex-col items-center justify-center">
+        <div className="bg-[#111827] px-6 py-4 rounded-2xl shadow-lg border border-white/10">
+          <div className="flex gap-2">
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:0ms]" />
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:150ms]" />
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:300ms]" />
           </div>
-        ))}
+        </div>
+
+        <p className="mt-4 text-sm text-gray-400 tracking-wide">Connecting securely…</p>
       </div>
     );
   }
@@ -78,7 +78,7 @@ function Authentication() {
       <img src={HandImg} alt="..." className="absolute bottom-0 left-0  w-150" />
 
       <nav className="absolute top-0 left-0 text-[#ffffffda] pt-[1rem] pl-[2rem] pr-[4rem] flex justify-between w-full items-center">
-        <h1 className="text-[2rem]">Chat Hub</h1>
+        <h1 className="text-[2rem]">Lumeo</h1>
         <div className="flex gap-[3rem] pt-2 pb-2 pr-6 pl-6 bg-[#ffffff15] text-[17px] rounded-4xl">
           <button type="button" className="cursor-pointer">
             About

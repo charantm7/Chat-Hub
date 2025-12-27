@@ -28,7 +28,6 @@ function AuthCallBack() {
     try {
       const decoded = jwtDecode(token);
 
-      // ✅ Store expiry as milliseconds (number)
       const accessExpiry = decoded.exp * 1000;
 
       localStorage.setItem("token", token);

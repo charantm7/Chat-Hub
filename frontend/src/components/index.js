@@ -23,14 +23,27 @@ export async function refreshAccessToken() {
     return data.access_token;
   } catch (err) {
     console.error("Token refresh error:", err);
-    logout();
     return null;
   }
 }
 
-export function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("accessExpiry");
+export async function logout() {
+  try {
+    const req = await fetch("http://127.0.0.1:8000/v1/auth/logout", {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!req.ok) throw new Error("Logout Failed");
+    const data = req.json();
+    console.log(data);
+  } catch (e) {
+    console.warn("Logout Failed");
+  } finally {
+    localStorage.removeItem("token");
+    localStorage.removeItem("accessExpiry");
+    window.location.replace("/");
+  }
 }
 
 export async function GetValidAccessToken() {
