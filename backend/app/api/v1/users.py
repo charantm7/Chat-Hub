@@ -15,12 +15,27 @@ from app.models.user_model import Users, FriendRequest, RequestStatus, RefreshTo
 from app.services import user_service
 from app.schemas.user_schema import RefreshToken, UpdateProfile
 from app.core.redis_script import redis_manager
+from app.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 
 
 @router.get('/login/google')
 async def login_with_google(request: Request):
+
+    client_ip = request.client.host if request.client else 'unknown'
+    
+    logger.info(
+        "Google authentication initiated",
+        extra={
+            "provider":"Google",
+            "ip":client_ip,
+            
+        }
+    )
+    
     redirect_uri = f"{settings.REDIRECT_URL}/v1/auth/google/callback"
     return await security.oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -28,11 +43,14 @@ async def login_with_google(request: Request):
 @router.get('/google/callback')
 async def google_callback(request: Request, db: Session = Depends(get_db)):
 
+
     try:
         token = await security.oauth.google.authorize_access_token(request)
     except Exception as e:
+
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Google authentication Failed: {e}")
+
 
     access_token = token.get('access_token')
     userinfo = token.get('userinfo')
@@ -105,7 +123,7 @@ async def refresh(request: Request, db: Session = Depends(get_db)):
     
 
     if not refresh_token:
-        print("noo refresh token")
+
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token not found")
 
     tokens = db.query(RefreshTokenModel).filter(RefreshTokenModel.is_revoked == False, RefreshTokenModel.expire_at > datetime.now(timezone.utc)).all()
@@ -175,7 +193,7 @@ async def logout(request: Request, db:Session = Depends(get_db)):
     refresh_token = request.cookies.get("refresh_token")
 
     if not refresh_token:
-        print("no token")
+       
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Refresh Token not found")
 
     hashed_token = security.hash_refresh_token(refresh_token)

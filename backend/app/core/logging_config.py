@@ -1,6 +1,5 @@
 import logging
 from logging.handlers import RotatingFileHandler
-from math import log
 import os
 
 LOG_DIR = "logs"
@@ -10,7 +9,7 @@ if not os.path.exists(LOG_DIR):
 LOG_FILE = os.path.join(LOG_DIR, "app.log")
 
 formatter = logging.Formatter(
-    "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
+    "[%(asctime)s] [%(levelname)s] [%(name)s] [%(message)s]"
 )
 
 

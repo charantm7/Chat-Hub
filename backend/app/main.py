@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.services.user_service import get_current_user
 from app.models.user_model import Users
 from app.core.redis_script import redis_manager, pubsub_manager
+from app.core.logging_config import get_logger
 
 
 @asynccontextmanager
@@ -57,5 +58,4 @@ async def favicon():
 
 @app.get('/')
 async def health(current_user: Users = Depends(get_current_user)):
-    print(current_user)
     return current_user
