@@ -12,6 +12,7 @@ function Authentication() {
   const [user, setUser] = useState([]);
   const [loading, setLoading] = useState(true);
   const [IsLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
 
   const Logout = () => {
     logout();
@@ -88,6 +89,9 @@ function Authentication() {
           </button>
           <button type="button" className="cursor-pointer">
             Help
+          </button>
+          <button className="cursor-pointer" onClick={() => navigate("/chat")}>
+            Try Chat
           </button>
         </div>
         {IsLoggedIn ? (

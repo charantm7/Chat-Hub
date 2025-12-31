@@ -14,8 +14,7 @@ function Navbar({ onSelect }) {
   const [count, setCount] = useState(null);
   const [requestStatus, setRequestStatus] = useState({});
   const [user, setUser] = useState([]);
-
-  console.log("hi", user);
+  const [loading, setLoading] = useState(null);
 
   const handleOverlayClick = (e) => {
     if (e.target.id == "overlay") {
@@ -45,6 +44,13 @@ function Navbar({ onSelect }) {
       console.log("accept", error);
     }
   };
+
+  const DelayLogout = () => {
+    setLoading(true);
+    setTimeout(() => logout(), 3000);
+    setLoading(false);
+  };
+
   const rejectRequest = async (id) => {
     const token = await GetValidAccessToken();
 
@@ -116,6 +122,22 @@ function Navbar({ onSelect }) {
     getIncomingRequest();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="h-screen bg-[#0b0f1a] flex flex-col items-center justify-center">
+        <div className="bg-[#111827] px-6 py-4 rounded-2xl shadow-lg border border-white/10">
+          <div className="flex gap-2">
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:0ms]" />
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:150ms]" />
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:300ms]" />
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm text-gray-400 tracking-wide">Connecting securely…</p>
+      </div>
+    );
+  }
+
   return (
     <nav className=" bg-[#0104099e] text-[#e8e8e8e0] flex flex-row justify-between pt-[.5rem] pb-[.5rem] pr-[1rem] pl-[1rem] border-1 border-b-0 border-[var(--border)] items-center rounded-t-lg">
       <div className="flex items-center gap-2">
@@ -146,7 +168,7 @@ function Navbar({ onSelect }) {
           className="text-[17px] transition-transform hover:animate-spin cursor-pointer"
         />
         <FontAwesomeIcon
-          onClick={() => logout()}
+          onClick={() => setShowModal("logout")}
           icon={faRightFromBracket}
           className="text-[18px] cursor-pointer"
         />
@@ -260,6 +282,32 @@ function Navbar({ onSelect }) {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showModal == "logout" && (
+        <div
+          id="overlay"
+          onClick={handleOverlayClick}
+          className="fixed inset-0 bg-[#000000a5] backdrop-blur-[2px] flex justify-center items-center z-50"
+        >
+          <div className="bg-opacity-50 w-[20%] h-[20%] absolute left-[40%] top-[35%] flex flex-col gap-5  p-6 bg-[#000c] items-center text-[#ffffffd6] border-1 border-[#ffffff34] rounded-xl">
+            <div className="mt-4 mr-10">Are you sure? Need to logout!</div>
+            <div className="flex items-center  gap-5 mt-4 ml-20">
+              <button
+                onClick={() => setShowModal(null)}
+                className="cursor-pointer px-3 py-1 rounded-md bg-gray-200 text-black hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => logout()}
+                className=" px-3 py-1 cursor-pointer border-1 border-[#f7f7f75d] rounded-md bg-red-700 hover:bg-red-600 "
+              >
+                Submit
+              </button>
             </div>
           </div>
         </div>

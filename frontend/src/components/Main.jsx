@@ -11,6 +11,7 @@ import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 function Main({ selectedModal, onSelect }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [onLoading, setOnLoading] = useState(null);
 
   console.log("current user", currentUser);
 
@@ -71,6 +72,7 @@ function Main({ selectedModal, onSelect }) {
     async function get_current_user() {
       const token = await GetValidAccessToken();
       console.log("token:", token);
+      setOnLoading(true);
       try {
         const res = await fetch("http://127.0.0.1:8000/", {
           method: "GET",
@@ -85,13 +87,31 @@ function Main({ selectedModal, onSelect }) {
         const data = await res.json();
 
         setCurrentUser(data);
+        setOnLoading(false);
       } catch (error) {
         console.log(error);
+        setOnLoading(false);
       }
     }
 
     get_current_user();
   }, []);
+
+  if (onLoading) {
+    return (
+      <div className="h-screen bg-[#0b0f1a] flex flex-col items-center justify-center">
+        <div className="bg-[#111827] px-6 py-4 rounded-2xl shadow-lg border border-white/10">
+          <div className="flex gap-2">
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:0ms]" />
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:150ms]" />
+            <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:300ms]" />
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm text-gray-400 tracking-wide">Connecting securely…</p>
+      </div>
+    );
+  }
 
   return (
     <main className="border border-[var(--border)] bg-[#0104099e] h-[90.5vh] rounded-b-lg flex overflow-hidden">
