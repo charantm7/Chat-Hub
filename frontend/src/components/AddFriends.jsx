@@ -9,7 +9,7 @@ function AddFriends() {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/v1/auth/get-users");
+        const response = await fetch("http://127.0.0.1:8000/v1/user/get-users");
 
         if (!response) {
           throw new Error("Unauthorized ");

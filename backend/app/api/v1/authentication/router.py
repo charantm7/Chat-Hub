@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.psql_connection import get_db
 from .service import google_login, google_callback_route, refresh_token, logout_route
+from .schema import AccessTokenSchema, LogoutResponseSchema
 
 auth_router = APIRouter()
 
@@ -19,13 +20,13 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     return await google_callback_route(request=request, db=db)
     
 
-@auth_router.get('/refresh')
+@auth_router.get('/refresh', response_model=AccessTokenSchema)
 async def refresh(request: Request, db: Session = Depends(get_db)):
 
     return await refresh_token(request=request, db=db)
 
 
-@auth_router.get("/logout")
+@auth_router.get("/logout", response_model=LogoutResponseSchema)
 async def logout(request: Request, db:Session = Depends(get_db)):
 
     return await logout_route(request=request, db=db)

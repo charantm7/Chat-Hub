@@ -1,16 +1,24 @@
 from fastapi import APIRouter
 
-from .v1.users import router as user_router
+from .v1.users.router import user_router
 from .v1.websocket_chat import ws_chat
 from .v1.chats.router import chat as chat_router
+from .v1.authentication.router import auth_router
+
 
 
 api_router = APIRouter()
 
 api_router.include_router(
-    user_router,
+    auth_router,
     prefix='/v1/auth',
     tags=['Authentication']
+)
+
+api_router.include_router(
+    user_router,
+    prefix='/v1/user',
+    tags=['User']
 )
 
 api_router.include_router(

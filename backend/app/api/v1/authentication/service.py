@@ -2,17 +2,17 @@
 import datetime
 import httpx
 
-from fastapi import APIRouter, Request, Depends, HTTPException, status
+from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.utils import security
-from app.core.psql_connection import get_db
 from app.models.user_model import Users, RefreshTokenModel
 from app.services import user_service
 from app.core.logging_config import get_logger
+from .schema import LogoutResponseSchema, AccessTokenSchema
 
 logger = get_logger(__name__)
 
@@ -31,7 +31,7 @@ async def google_login(request):
     redirect_uri = f"{settings.REDIRECT_URL}/v1/auth/google/callback"
     return await security.oauth.google.authorize_redirect(request, redirect_uri)
 
-async def google_callback_route(request, db):
+async def google_callback_route(request, db:Session):
 
     try:
         token = await security.oauth.google.authorize_access_token(request)
@@ -105,7 +105,7 @@ async def google_callback_route(request, db):
     return response
 
 
-async def refresh_token(request, db):
+async def refresh_token(request, db:Session):
     refresh_token = request.cookies.get('refresh_token')
     
 
@@ -137,13 +137,10 @@ async def refresh_token(request, db):
     
     access_token = await security.create_access_token({"email": user_email})
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    return AccessTokenSchema(access_token=access_token, token_type="Bearer").model_dump()
 
 
-async def logout_route(request, db):
+async def logout_route(request, db:Session):
 
 
     refresh_token = request.cookies.get("refresh_token")
@@ -165,7 +162,7 @@ async def logout_route(request, db):
     token.is_revoked = True
     db.commit()
 
-    response = JSONResponse({"message":"Logout Successfull"})
+    response = JSONResponse(content=LogoutResponseSchema(message="Logout successful", success=True).model_dump())
 
     response.delete_cookie(
         key="refresh_token",

@@ -59,7 +59,7 @@ export async function GetAllUsers() {
   const token = await GetValidAccessToken();
   if (!token) return null;
   try {
-    const res = await fetch("http://127.0.0.1:8000/v1/auth/get-users", {
+    const res = await fetch("http://127.0.0.1:8000/v1/user/get-users", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

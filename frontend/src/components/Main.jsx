@@ -47,7 +47,7 @@ function Main({ selectedModal, onSelect }) {
       }).map(([Key, value]) => [Key, value === "" ? null : value])
     );
     try {
-      const res = await fetch("http://127.0.0.1:8000/v1/auth/update/my/profile", {
+      const res = await fetch("http://127.0.0.1:8000/v1/user/update/my/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
